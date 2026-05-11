@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kokue Tuja — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brown-dark:#3d2410;--brown-mid:#7a4f2e;--gold:#c8941e;
+  --cream:#faf6f0;--cream-2:#f0e8dc;--cream-3:#e8d8c4;
+  --ink:#2a1f14;--ink-2:#6b5040;--ink-3:#a0897a;--border:#d9c9b8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{min-height:100vh;background:var(--cream);font-family:'Barlow',sans-serif;}
+
+/* HEADER */
+.header{background:var(--brown-dark);padding:3rem 2rem 2.5rem;text-align:center;}
+.logo-area{margin-bottom:1.5rem;}
+.brand{font-family:'Libre Baskerville',serif;font-size:2rem;color:#f5e8d8;letter-spacing:0.02em;}
+.brand-sub{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(245,232,216,0.45);margin-top:6px;}
+.live-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:1rem;}
+.live-badge{background:rgba(46,180,100,0.2);border:1px solid rgba(46,180,100,0.5);color:#4ade80;font-family:'DM Mono',monospace;font-size:9px;padding:3px 10px;border-radius:3px;display:flex;align-items:center;gap:5px;}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.header-date{font-family:'DM Mono',monospace;font-size:9px;color:rgba(245,232,216,0.35);letter-spacing:0.1em;}
+
+/* MAIN */
+.main{padding:2.5rem 2rem;max-width:1100px;margin:0 auto;}
+.section-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-3);margin-bottom:1.25rem;padding-bottom:0.5rem;border-bottom:0.5px solid var(--border);}
+
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:2.5rem;}
+.card{background:#fff;border:0.5px solid var(--border);border-radius:8px;overflow:hidden;text-decoration:none;color:inherit;transition:transform .18s,box-shadow .18s;display:block;}
+.card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(61,36,16,0.12);}
+.card-stripe{height:4px;}
+.card-body{padding:1.5rem;}
+.card-icon{font-size:1.75rem;margin-bottom:1rem;}
+.card-title{font-family:'Libre Baskerville',serif;font-size:1.1rem;color:var(--brown-dark);margin-bottom:0.4rem;}
+.card-desc{font-size:12px;color:var(--ink-3);line-height:1.6;margin-bottom:1.25rem;}
+.card-meta{display:flex;flex-wrap:wrap;gap:6px;}
+.tag{display:inline-block;padding:2px 8px;border-radius:3px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;background:var(--cream-2);color:var(--ink-2);}
+.card-footer{padding:0.75rem 1.5rem;border-top:0.5px solid var(--cream-2);display:flex;align-items:center;justify-content:space-between;}
+.card-link{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--brown-mid);}
+.card-arrow{font-size:14px;color:var(--ink-3);transition:transform .15s;}
+.card:hover .card-arrow{transform:translateX(4px);}
+
+/* INFO SECTION */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.info-box{background:#fff;border:0.5px solid var(--border);border-radius:6px;padding:1.25rem;}
+.info-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:0.75rem;}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--cream-2);font-size:12px;color:var(--ink-2);}
+.info-row:last-child{border-bottom:none;}
+.info-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink);}
+
+/* FOOTER */
+.footer{text-align:center;padding:2rem;font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-3);letter-spacing:0.1em;border-top:0.5px solid var(--border);margin-top:1rem;}
+
+@media(max-width:800px){
+  .cards{grid-template-columns:1fr;}
+  .info-grid{grid-template-columns:1fr;}
+  .brand{font-size:1.5rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-area">
+    <div class="brand">Kokue Tuja</div>
+    <div class="brand-sub">Sistema de gestión · Ciclo 2025 / 2026</div>
+  </div>
+  <div class="live-row">
+    <div class="live-badge"><span class="live-dot"></span>Datos en tiempo real</div>
+    <span class="header-date" id="fecha-hoy"></span>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="section-title">Módulos disponibles</div>
+
+  <div class="cards">
+
+    <!-- FACTURACIÓN -->
+    <a class="card" href="facturacion.html">
+      <div class="card-stripe" style="background:linear-gradient(90deg,#c8941e,#7a4f2e);"></div>
+      <div class="card-body">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Facturación</div>
+        <div class="card-desc">Dashboard de facturación del feedlot. Análisis por hotelero, kg de materia seca, evolución mensual y rendimiento por período.</div>
+        <div class="card-meta">
+          <span class="tag">Hoteleros</span>
+          <span class="tag">KG MS</span>
+          <span class="tag">Facturación</span>
+          <span class="tag">Evolución</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="card-link">Abrir módulo</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- HACIENDA -->
+    <a class="card" href="hacienda.html">
+      <div class="card-stripe" style="background:linear-gradient(90deg,#1a6b8a,#2e7d4f);"></div>
+      <div class="card-body">
+        <div class="card-icon">🐄</div>
+        <div class="card-title">Hacienda</div>
+        <div class="card-desc">Compras y ventas de hacienda. Comparativa entre campaña 25/26 y 26/27. Precio $/kg, rendimiento carnicero, merma y análisis de margen.</div>
+        <div class="card-meta">
+          <span class="tag">Compras</span>
+          <span class="tag">Ventas</span>
+          <span class="tag">Rendimiento</span>
+          <span class="tag">Interanual</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="card-link">Abrir módulo</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- MAÍZ -->
+    <a class="card" href="maiz.html">
+      <div class="card-stripe" style="background:linear-gradient(90deg,#d4a017,#8b6347);"></div>
+      <div class="card-body">
+        <div class="card-icon">🌽</div>
+        <div class="card-title">Maíz</div>
+        <div class="card-desc">Cuenta corriente en kg de maíz. Saldo por fijar por proveedor, valorización al precio del día y balance global stock vs deuda.</div>
+        <div class="card-meta">
+          <span class="tag">CTA CTE</span>
+          <span class="tag">Por fijar</span>
+          <span class="tag">Valorización</span>
+          <span class="tag">Proveedores</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="card-link">Abrir módulo</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- INFO RÁPIDA -->
+  <div class="section-title">Referencia rápida</div>
+  <div class="info-grid">
+    <div class="info-box">
+      <div class="info-title">Estado de módulos</div>
+      <div class="info-row"><span>Facturación</span><span class="info-val" style="color:#2e7d4f;">✓ Activo</span></div>
+      <div class="info-row"><span>Hacienda 25/26 + 26/27</span><span class="info-val" style="color:#2e7d4f;">✓ Activo</span></div>
+      <div class="info-row"><span>Maíz — CTA CTE</span><span class="info-val" style="color:#2e7d4f;">✓ Activo</span></div>
+      <div class="info-row"><span>Próximo módulo</span><span class="info-val" style="color:#a0897a;">— Pendiente</span></div>
+    </div>
+    <div class="info-box">
+      <div class="info-title">Cómo usar</div>
+      <div class="info-row"><span>Hacé click en cualquier módulo</span><span class="info-val">↑ arriba</span></div>
+      <div class="info-row"><span>El nav superior te permite volver</span><span class="info-val">siempre</span></div>
+      <div class="info-row"><span>Los filtros son combinables</span><span class="info-val">en cada módulo</span></div>
+      <div class="info-row"><span>Los precios del maíz son editables</span><span class="info-val">en tiempo real</span></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  KOKUE TUJA SRL · Sistema de gestión interno · <span id="year"></span>
+</div>
+
+<script>
+const hoy = new Date();
+document.getElementById('fecha-hoy').textContent =
+  hoy.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).toUpperCase();
+document.getElementById('year').textContent = hoy.getFullYear();
+</script>
+</body>
+</html>
