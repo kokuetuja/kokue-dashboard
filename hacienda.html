@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kokue Tuja — Hacienda</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--brown:#8B6347;--brown-dark:#3d2410;--brown-mid:#7a4f2e;--gold:#c8941e;--cream:#faf6f0;--cream-2:#f0e8dc;--cream-3:#e8d8c4;--ink:#2a1f14;--ink-2:#6b5040;--ink-3:#a0897a;--border:#d9c9b8;--c26:#1a6b8a;--c25:#9b3d7a;--good-bg:#d4e8da;--good-txt:#1a4d2a;--mid-bg:#fdefc7;--mid-txt:#7a4f00;--low-bg:#fad7d4;--low-txt:#8b1a14;}
+*{margin:0;padding:0;box-sizing:border-box;}html{background:var(--cream);color:var(--ink);font-family:'Barlow',sans-serif;font-size:14px;}
+.nav{background:var(--brown-dark);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:52px;position:sticky;top:0;z-index:200;}
+.nav-brand{color:#f5e8d8;font-family:'Libre Baskerville',serif;font-size:13px;}
+.nav-links{display:flex;gap:2px;}
+.nav-link{color:rgba(245,232,216,0.55);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:6px 12px;border-radius:3px;text-decoration:none;transition:all .15s;}
+.nav-link:hover{background:rgba(245,232,216,0.1);color:#f5e8d8;}.nav-link.active{background:rgba(245,232,216,0.15);color:#f5e8d8;}
+.live-badge{background:rgba(46,180,100,0.2);border:1px solid rgba(46,180,100,0.5);color:#4ade80;font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:3px;display:flex;align-items:center;gap:4px;}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.filter-bar{background:#fff;border-bottom:1px solid var(--border);padding:0.55rem 1.5rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;position:sticky;top:52px;z-index:100;}
+.filter-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap;}
+.filter-group{display:flex;align-items:center;gap:6px;}
+.seg{display:flex;border:0.5px solid var(--border);border-radius:4px;overflow:hidden;}
+.seg-btn{padding:4px 11px;font-size:11px;border:none;background:transparent;color:var(--ink-2);cursor:pointer;font-family:'Barlow',sans-serif;white-space:nowrap;transition:all .12s;}
+.seg-btn+.seg-btn{border-left:0.5px solid var(--border);}
+.seg-btn.active{background:var(--brown-dark);color:#f5e8d8;}.seg-btn:hover:not(.active){background:var(--cream-2);}
+select.fs{border:0.5px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;font-family:'Barlow',sans-serif;color:var(--ink-2);background:var(--cream);cursor:pointer;}
+input[type=date].fd{border:0.5px solid var(--border);border-radius:4px;padding:4px 7px;font-size:11px;font-family:'Barlow',sans-serif;color:var(--ink-2);background:var(--cream);cursor:pointer;width:128px;}
+input[type=date].fd:focus{outline:none;border-color:var(--brown-mid);}
+.date-range-active .fd{border-color:var(--brown-mid);background:#fff;}
+.btn-clear{background:transparent;border:0.5px solid var(--border);border-radius:4px;padding:4px 9px;font-size:10px;font-family:'DM Mono',monospace;color:var(--ink-3);cursor:pointer;letter-spacing:.05em;white-space:nowrap;}
+.btn-clear:hover{background:var(--low-bg);color:var(--low-txt);}
+.filter-sep{width:0.5px;height:20px;background:var(--border);margin:0 2px;}
+.shortcut-row{display:flex;gap:4px;flex-wrap:wrap;}
+.sc-btn{padding:3px 8px;font-size:10px;border:0.5px solid var(--border);border-radius:3px;cursor:pointer;background:transparent;color:var(--ink-3);font-family:'DM Mono',monospace;letter-spacing:.04em;white-space:nowrap;}
+.sc-btn:hover{background:var(--cream-2);color:var(--ink);}
+input[type=date].fd{border:0.5px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;font-family:'Barlow',sans-serif;color:var(--ink-2);background:var(--cream);cursor:pointer;width:130px;}
+input[type=date].fd:focus{outline:none;border-color:var(--brown-mid);}
+.btn-clear{background:transparent;border:0.5px solid var(--border);border-radius:4px;padding:4px 9px;font-size:10px;font-family:'DM Mono',monospace;color:var(--ink-3);cursor:pointer;letter-spacing:.05em;}
+.btn-clear:hover{background:var(--cream-2);color:var(--ink);}
+.filter-sep{width:0.5px;height:20px;background:var(--border);margin:0 4px;}
+.date-range-active .fd{border-color:var(--brown-mid);background:#fff;}
+.main{padding:1.25rem 1.5rem;max-width:1600px;margin:0 auto;}
+.banner{display:flex;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap;}
+.bcard{flex:1;min-width:130px;background:#fff;border:0.5px solid var(--border);border-radius:6px;padding:.75rem 1rem;position:relative;overflow:hidden;}
+.bcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.bcard.c26::before{background:var(--c26);}.bcard.c25::before{background:var(--c25);}.bcard.diff::before{background:var(--gold);}
+.bc-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:3px;}
+.bc-val{font-family:'Libre Baskerville',serif;font-size:1.25rem;font-weight:700;color:var(--brown-mid);line-height:1;}
+.bc-val.up{color:#1a4d2a;}.bc-val.dn{color:#8b1a14;}
+.bc-sub{font-size:10px;color:var(--ink-3);margin-top:3px;}
+.sep{display:flex;align-items:center;gap:10px;margin:1.25rem 0 .75rem;}
+.sep-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap;}
+.sep-line{flex:1;height:.5px;background:var(--border);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.box{background:#fff;border:.5px solid var(--border);border-radius:6px;padding:1rem;}
+.box-ttl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.leg{display:flex;gap:10px;font-size:11px;color:var(--ink-2);}
+.leg-i{display:flex;align-items:center;gap:4px;}
+.leg-dot{width:10px;height:3px;border-radius:2px;display:inline-block;}
+.chart-wrap{position:relative;}
+.tbox{background:#fff;border:.5px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:1rem;}
+.thead-b{padding:.6rem 1rem;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.tttl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);}
+.twrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{background:var(--brown-dark);}
+thead th{padding:6px 9px;text-align:right;color:#f5e8d8;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;}
+thead th:first-child,thead th:nth-child(2){text-align:left;}
+tbody tr{border-bottom:.5px solid var(--cream-2);}tbody tr:hover{background:var(--cream-2);}
+tbody td{padding:5px 9px;text-align:right;white-space:nowrap;}
+tbody td:first-child{text-align:left;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-2);}
+tbody td:nth-child(2){text-align:left;font-weight:500;}
+tfoot td{padding:5px 9px;text-align:right;font-weight:700;background:var(--cream-3);border-top:1px solid var(--border);}
+tfoot td:first-child,tfoot td:nth-child(2){text-align:left;}
+.badge{display:inline-block;padding:2px 6px;border-radius:3px;font-family:'DM Mono',monospace;font-size:8px;}
+.b26{background:#dceef5;color:#0d4a62;}.b25{background:#f0d8ea;color:#6b1a50;}
+.bcat{background:var(--cream-2);color:var(--ink-2);}.bpend{background:var(--mid-bg);color:var(--mid-txt);}
+.nu{color:#1a4d2a;font-weight:600;}.nd{color:#8b1a14;font-weight:600;}.nn{color:var(--brown-mid);font-weight:600;}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr;}.filter-bar{gap:.75rem;}}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand">Kokue Tuja</div>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">Inicio</a>
+    <a class="nav-link" href="facturacion.html">Facturación</a>
+    <a class="nav-link active" href="hacienda.html">Hacienda</a>
+    <a class="nav-link" href="maiz.html">Maíz</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+  </div>
+</nav>
+
+<div class="filter-bar">
+  <div class="filter-group">
+    <span class="filter-label">Campaña</span>
+    <div class="seg" id="seg-camp">
+      <button class="seg-btn active" onclick="setCamp('ambas')">Ambas</button>
+      <button class="seg-btn" onclick="setCamp('2526')">25/26</button>
+      <button class="seg-btn" onclick="setCamp('2627')">26/27</button>
+    </div>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Tipo</span>
+    <div class="seg" id="seg-tipo">
+      <button class="seg-btn active" onclick="setTipo('todo')">Todo</button>
+      <button class="seg-btn" onclick="setTipo('compra')">Compras</button>
+      <button class="seg-btn" onclick="setTipo('venta')">Ventas</button>
+    </div>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Categoría</span>
+    <select class="fs" id="sel-cat" onchange="catFiltro=this.value;refresh()"><option value="">Todas</option></select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Empresa</span>
+    <select class="fs" id="sel-emp" onchange="empFiltro=this.value;refresh()">
+      <option value="">Todas</option>
+      <option>KOKUE TUJA SRL</option><option>SOC DK</option><option>KOKUE/DOMIZI</option>
+      <option>PALASESI</option><option>CACCIARELLI</option><option>DICCHIARA</option>
+    </select>
+  </div>
+  <div class="filter-sep"></div>
+  <div class="filter-group" id="date-group">
+    <span class="filter-label">Desde</span>
+    <input type="date" class="fd" id="f-desde" onchange="dateF.desde=this.value;updateDateActive();refresh()">
+    <span class="filter-label">Hasta</span>
+    <input type="date" class="fd" id="f-hasta" onchange="dateF.hasta=this.value;updateDateActive();refresh()">
+    <button class="btn-clear" id="btn-clear-dates" onclick="clearDates()" style="display:none;">✕ fechas</button>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Período rápido</span>
+    <div class="shortcut-row">
+      <button class="sc-btn" onclick="setPreset('2025-03-01','2025-06-30')">Mar–Jun 25</button>
+      <button class="sc-btn" onclick="setPreset('2025-07-01','2025-10-31')">Jul–Oct 25</button>
+      <button class="sc-btn" onclick="setPreset('2025-11-01','2026-02-28')">Nov 25–Feb 26</button>
+      <button class="sc-btn" onclick="setPreset('2026-03-01','2026-05-31')">Mar–May 26</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="banner" id="banner"></div>
+
+  <div class="sep"><div class="sep-lbl">Precio $/kg — operaciones</div><div class="sep-line"></div></div>
+  <div class="g2">
+    <div class="box">
+      <div class="box-ttl">$/kg compra por operación<div class="leg"><div class="leg-i"><div class="leg-dot" style="background:var(--c25)"></div>25/26</div><div class="leg-i"><div class="leg-dot" style="background:var(--c26)"></div>26/27</div></div></div>
+      <div class="chart-wrap" style="height:195px;"><canvas id="c-pc"></canvas></div>
+    </div>
+    <div class="box">
+      <div class="box-ttl">$/kg venta por operación<div class="leg"><div class="leg-i"><div class="leg-dot" style="background:var(--c25)"></div>25/26</div><div class="leg-i"><div class="leg-dot" style="background:var(--c26)"></div>26/27</div></div></div>
+      <div class="chart-wrap" style="height:195px;"><canvas id="c-pv"></canvas></div>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-lbl">Comparativa mes a mes — 25/26 vs 26/27</div><div class="sep-line"></div></div>
+  <div class="g2">
+    <div class="box">
+      <div class="box-ttl">$/kg promedio compra por mes</div>
+      <div class="chart-wrap" style="height:195px;"><canvas id="c-mc"></canvas></div>
+    </div>
+    <div class="box">
+      <div class="box-ttl">$/kg promedio venta por mes</div>
+      <div class="chart-wrap" style="height:195px;"><canvas id="c-mv"></canvas></div>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-lbl">Distribución y rendimientos</div><div class="sep-line"></div></div>
+  <div class="g3">
+    <div class="box">
+      <div class="box-ttl">Cabezas por categoría</div>
+      <div class="chart-wrap" style="height:175px;"><canvas id="c-cat"></canvas></div>
+    </div>
+    <div class="box">
+      <div class="box-ttl">Rendimiento carnicero % (ventas)</div>
+      <div class="chart-wrap" style="height:175px;"><canvas id="c-rend"></canvas></div>
+    </div>
+    <div class="box">
+      <div class="box-ttl">Kg vendidos por comprador</div>
+      <div class="chart-wrap" style="height:175px;"><canvas id="c-comp"></canvas></div>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-lbl">Detalle operaciones</div><div class="sep-line"></div></div>
+
+  <div class="tbox">
+    <div class="thead-b"><div class="tttl">Compras de invernada</div><span id="cc" class="badge b26"></span></div>
+    <div class="twrap"><table>
+      <thead><tr><th>Fecha</th><th>Empresa</th><th>Cat.</th><th>Cab</th><th>Kg</th><th>Kg Prom</th><th>% Merma</th><th>$ Total</th><th>$ x Kg Final</th><th>Camp.</th></tr></thead>
+      <tbody id="tc"></tbody><tfoot id="tcf"></tfoot>
+    </table></div>
+  </div>
+
+  <div class="tbox">
+    <div class="thead-b"><div class="tttl">Ventas de hacienda</div><span id="vc" class="badge" style="background:var(--good-bg);color:var(--good-txt);"></span></div>
+    <div class="twrap"><table>
+      <thead><tr><th>Fecha</th><th>Empresa</th><th>Comprador</th><th>Cat.</th><th>Cab</th><th>Kg Vta</th><th>Kg Carne</th><th>Rend %</th><th>% Merma</th><th>$ Total</th><th>$ x Kg Final</th><th>Camp.</th></tr></thead>
+      <tbody id="tv"></tbody><tfoot id="tvf"></tfoot>
+    </table></div>
+  </div>
+</div>
+
+<script>
+const D26=[
+  {f:'2026-03-06',e:'KOKUE TUJA SRL',cat:'VAC/OVEROS',cab:84,kg:23226,kp:277,me:0,tot:99101200,fk:4266.82,ti:'compra'},
+  {f:'2026-03-07',e:'KOKUE TUJA SRL',cat:'VC/NV',cab:26,kg:12550,kp:483,me:0,tot:37590250,fk:3202.66,ti:'compra'},
+  {f:'2026-03-07',e:'KOKUE TUJA SRL',cat:'TER',cab:39,kg:6954,kp:178,me:0,tot:43350000,fk:6700.91,ti:'compra'},
+  {f:'2026-03-07',e:'KOKUE TUJA SRL',cat:'NT',cab:18,kg:4392,kp:244,me:3.46,tot:20340000,fk:4978.11,ti:'compra'},
+  {f:'2026-04-09',e:'SOC DK',cat:'TER',cab:37,kg:6790,kp:0,me:-0.29,tot:41079500,fk:6322.25,ti:'compra'},
+  {f:'2026-04-15',e:'KOKUE TUJA SRL',cat:'VC',cab:56,kg:24276,kp:434,me:4.19,tot:66631100,fk:2978.84,ti:'compra'},
+  {f:'2026-05-09',e:'SOC DK',cat:'TER',cab:78,kg:12528,kp:161,me:0.28,tot:0,fk:0,ti:'compra',p:1},
+  {f:'2026-05-09',e:'KOKUE TUJA SRL',cat:'TER',cab:124,kg:25500,kp:206,me:2.6,tot:0,fk:0,ti:'compra',p:1},
+  {f:'2026-03-02',e:'KOKUE TUJA SRL',co:'COTO',cat:'NV/VQ',cab:65,kg:24738,kc:14261,rd:57.6,me:7,tot:127730965,fk:4992.88,ti:'venta'},
+  {f:'2026-03-11',e:'KOKUE TUJA SRL',co:'AGROFURCA',cat:'MEJ',cab:11,kg:4501,kc:2487,rd:55.3,me:7,tot:21608649,fk:4793.05,ti:'venta'},
+  {f:'2026-03-24',e:'KOKUE TUJA SRL',co:'FRIGOLAR SA',cat:'VC',cab:50,kg:24254,kc:13533,rd:55.8,me:7,tot:92305832,fk:3613.86,ti:'venta'},
+  {f:'2026-03-30',e:'KOKUE TUJA SRL',co:'AZUL NAT. BEEF',cat:'VQ/VC',cab:47,kg:22153,kc:12323,rd:55.6,me:7,tot:97351795,fk:4189.68,ti:'venta'},
+  {f:'2026-04-07',e:'KOKUE TUJA SRL',co:'LOLOGAN SA',cat:'MEJ',cab:8,kg:4334,kc:2502,rd:57.7,me:7,tot:18193594,fk:4191.86,ti:'venta'},
+  {f:'2026-04-07',e:'SOC DK',co:'LOLOGAN SA',cat:'MEJ',cab:14,kg:5985,kc:3664,rd:61.2,me:7,tot:27668506,fk:4616.00,ti:'venta'},
+  {f:'2026-04-07',e:'KOKUE TUJA SRL',co:'COTO BS AS',cat:'NV/VQ',cab:66,kg:25649,kc:14107,rd:55.0,me:7,tot:118470669,fk:4523.69,ti:'venta'},
+  {f:'2026-04-15',e:'KOKUE TUJA SRL',co:'RIOPLATENSE SA',cat:'VC',cab:50,kg:25315,kc:13792,rd:54.5,me:7,tot:90879325,fk:3432.09,ti:'venta'},
+  {f:'2026-04-15',e:'KOKUE TUJA SRL',co:'RIOPLATENSE SA',cat:'VC',cab:20,kg:9579,kc:5218,rd:54.5,me:7,tot:34052144,fk:3389.97,ti:'venta'},
+  {f:'2026-04-21',e:'KOKUE TUJA SRL',co:'SCOC',cat:'NV/VQ',cab:63,kg:20311,kc:11622,rd:57.2,me:7,tot:101535057,fk:4989.96,ti:'venta'},
+  {f:'2026-04-21',e:'SOC DK',co:'SCOC',cat:'VQ',cab:4,kg:1135,kc:685,rd:60.4,me:7,tot:5573237,fk:4902.22,ti:'venta'},
+  {f:'2026-05-05',e:'KOKUE TUJA SRL',co:'RIOPLATENSE SA',cat:'NV/VC',cab:48,kg:25184,kc:14553,rd:57.8,me:7,tot:0,fk:0,ti:'venta',p:1},
+  {f:'2026-05-05',e:'KOKUE TUJA SRL',co:'FERIA',cat:'VC',cab:18,kg:7477,kc:0,rd:0,me:7,tot:0,fk:0,ti:'venta',p:1},
+];
+const D25=[
+  {f:'2025-03-12',e:'CANTARINI',cat:'NOV',cab:37,kg:14227,kp:385,me:1.17,tot:36990200,fk:2836.13,ti:'compra'},
+  {f:'2025-04-08',e:'KOKUE TUJA SRL',cat:'NOV/VAQ',cab:81,kg:23214,kp:287,me:5.23,tot:65600000,fk:3052.04,ti:'compra'},
+  {f:'2025-04-14',e:'KOKUE TUJA SRL',cat:'NOV/VAQ',cab:67,kg:14472,kp:216,me:2.78,tot:43682400,fk:3254.82,ti:'compra'},
+  {f:'2025-06-01',e:'KOKUE/DOMIZI',cat:'TERN/RAS',cab:58,kg:9948,kp:172,me:0.68,tot:36807600,fk:3996.77,ti:'compra'},
+  {f:'2025-06-03',e:'KOKUE/DOMIZI',cat:'TERNERAS',cab:62,kg:12032,kp:194,me:3.26,tot:40220003,fk:3551.51,ti:'compra'},
+  {f:'2025-06-04',e:'DICCHIARA',cat:'TER/VAQ',cab:118,kg:21966,kp:186,me:3.76,tot:72300026,fk:3504.23,ti:'compra'},
+  {f:'2025-06-04',e:'CACCIARELLI',cat:'TER/VAQ',cab:64,kg:14850,kp:232,me:3.97,tot:47179970,fk:3410.04,ti:'compra'},
+  {f:'2025-06-07',e:'KOKUE/DOMIZI',cat:'VAC',cab:46,kg:19706,kp:428,me:-0.88,tot:31638200,fk:1798.97,ti:'compra'},
+  {f:'2025-06-13',e:'KOKUE/DOMIZI',cat:'TER/TERNERA',cab:60,kg:7200,kp:120,me:3.33,tot:29971720,fk:4499.28,ti:'compra'},
+  {f:'2025-06-19',e:'KOKUE/DOMIZI',cat:'VAC',cab:52,kg:23520,kp:452,me:7.31,tot:37464400,fk:1680.18,ti:'compra'},
+  {f:'2025-06-26',e:'KOKUE TUJA SRL',cat:'VAC',cab:89,kg:35830,kp:403,me:-0.53,tot:54770800,fk:1674.90,ti:'compra'},
+  {f:'2025-06-24',e:'PALASESI',cat:'VQ',cab:98,kg:23311,kp:238,me:1.68,tot:71760300,fk:3254.07,ti:'compra'},
+  {f:'2025-07-19',e:'PALASESI',cat:'TER/RAS',cab:100,kg:25380,kp:254,me:0,tot:91368000,fk:3744.00,ti:'compra'},
+  {f:'2025-08-27',e:'KOKUE/DOMIZI',cat:'TERNERAS',cab:95,kg:16081,kp:169,me:0,tot:61767970,fk:4134.39,ti:'compra'},
+  {f:'2025-09-04',e:'KOKUE TUJA SRL',cat:'NOV',cab:64,kg:24561,kp:384,me:5.79,tot:79697735,fk:3489.32,ti:'compra'},
+  {f:'2025-09-05',e:'CACCIARELLI',cat:'NOV/VAC',cab:50,kg:13391,kp:268,me:3.91,tot:48069941,fk:3856.03,ti:'compra'},
+  {f:'2025-09-06',e:'KOKUE/DOMIZI',cat:'VAQ',cab:64,kg:10867,kp:170,me:1.93,tot:45217587,fk:4472.81,ti:'compra'},
+  {f:'2025-09-19',e:'KOKUE TUJA SRL',cat:'NOV/VAQ',cab:97,kg:25620,kp:264,me:-0.31,tot:91450000,fk:3836.52,ti:'compra'},
+  {f:'2025-10-11',e:'PALASESI',cat:'NOV/VAQ',cab:91,kg:26180,kp:288,me:0,tot:97460000,fk:3951.21,ti:'compra'},
+  {f:'2025-10-31',e:'KOKUE TUJA SRL',cat:'VAC',cab:55,kg:23940,kp:435,me:1.59,tot:71583500,fk:3040.05,ti:'compra'},
+  {f:'2025-11-06',e:'KOKUE TUJA SRL',cat:'VC/VQ',cab:42,kg:15590,kp:371,me:1.99,tot:51447000,fk:3633.05,ti:'compra'},
+  {f:'2025-11-13',e:'PALASESI',cat:'VQ',cab:103,kg:25150,kp:244,me:1.07,tot:113850000,fk:4766.89,ti:'compra'},
+  {f:'2025-11-14',e:'KOKUE TUJA SRL',cat:'NOV',cab:36,kg:14994,kp:417,me:1.29,tot:58476600,fk:4219.81,ti:'compra'},
+  {f:'2025-11-20',e:'KOKUE TUJA SRL',cat:'NOV',cab:81,kg:30429,kp:376,me:3.99,tot:116238780,fk:3988.08,ti:'compra'},
+  {f:'2025-11-27',e:'CACCIARELLI',cat:'NOV',cab:44,kg:14759,kp:335,me:1.89,tot:58298050,fk:4290.46,ti:'compra'},
+  {f:'2025-12-06',e:'KOKUE TUJA SRL',cat:'NOV/VQ',cab:77,kg:25200,kp:327,me:0.08,tot:104370000,fk:4439.16,ti:'compra'},
+  {f:'2025-12-10',e:'KOKUE TUJA SRL',cat:'NV/VQ/MEJ',cab:133,kg:57355,kp:431,me:2.99,tot:220490500,fk:3933.19,ti:'compra'},
+  {f:'2026-01-09',e:'KOKUE TUJA SRL',cat:'NOV/VQ',cab:74,kg:23720,kp:321,me:-0.76,tot:102370000,fk:4627.74,ti:'compra'},
+  {f:'2026-01-16',e:'KOKUE TUJA SRL',cat:'VC',cab:45,kg:17070,kp:379,me:2.40,tot:47796000,fk:2926.94,ti:'compra'},
+  {f:'2026-01-21',e:'KOKUE TUJA SRL',cat:'VC',cab:70,kg:29856,kp:427,me:-0.75,tot:83596800,fk:3011.33,ti:'compra'},
+  {f:'2026-01-29',e:'KOKUE TUJA SRL',cat:'VAC',cab:96,kg:45463,kp:474,me:2.12,tot:135139000,fk:3153.10,ti:'compra'},
+  {f:'2026-01-29',e:'KOKUE TUJA SRL',cat:'NV/VQ',cab:77,kg:24638,kp:320,me:0.07,tot:109478870,fk:4753.26,ti:'compra'},
+  {f:'2026-02-07',e:'KOKUE/DOMIZI',cat:'TER/RAS',cab:62,kg:13135,kp:212,me:9.93,tot:75230000,fk:6097.61,ti:'compra'},
+  {f:'2026-02-14',e:'KOKUE TUJA SRL',cat:'VQ/NV',cab:82,kg:22270,kp:272,me:3.73,tot:112060000,fk:5397.85,ti:'compra'},
+  // Ventas 25/26
+  {f:'2025-03-06',e:'KOKUE TUJA SRL',co:'LAS LOMITAS',cat:'NOV/VAQ',cab:75,kg:23064,kc:13103,rd:56.8,me:7,tot:69822284,fk:3023.36,ti:'venta'},
+  {f:'2025-03-10',e:'KOKUE TUJA SRL',co:'COTO',cat:'NOV',cab:10,kg:4290,kc:2362,rd:55.0,me:7,tot:12634024,fk:2809.58,ti:'venta'},
+  {f:'2025-03-12',e:'KOKUE TUJA SRL',co:'COTO',cat:'NOV',cab:30,kg:13129,kc:7075,rd:53.9,me:5,tot:38219879,fk:2791.84,ti:'venta'},
+  {f:'2025-04-03',e:'KOKUE TUJA SRL',co:'COTO',cat:'NOV',cab:58,kg:23027,kc:12866,rd:55.9,me:7,tot:72049596,fk:2980.58,ti:'venta'},
+  {f:'2025-04-14',e:'KOKUE TUJA SRL',co:'MICROGAUSS',cat:'NOV/VAQ',cab:60,kg:19178,kc:10804,rd:56.3,me:7,tot:64027193,fk:3334.75,ti:'venta'},
+  {f:'2025-04-19',e:'KOKUE TUJA SRL',co:'MICROGAUSS',cat:'NOV/VAQ',cab:71,kg:26970,kc:15230,rd:56.5,me:7,tot:85748689,fk:3176.20,ti:'venta'},
+  {f:'2025-04-28',e:'KOKUE TUJA SRL',co:'COTO',cat:'NOV/VAQ',cab:62,kg:25091,kc:14185,rd:56.5,me:7,tot:79351281,fk:3080.41,ti:'venta'},
+  {f:'2025-06-21',e:'KOKUE TUJA SRL',co:'RED ANGUS',cat:'VAQ',cab:62,kg:22841,kc:12560,rd:55.0,me:7,tot:68076404,fk:2974.04,ti:'venta'},
+  {f:'2025-06-21',e:'KOKUE TUJA SRL',co:'COTO',cat:'NOV',cab:38,kg:13984,kc:8168,rd:58.4,me:7,tot:45738033,fk:3104.47,ti:'venta'},
+  {f:'2025-07-19',e:'KOKUE TUJA SRL',co:'COTO',cat:'NOV/VAQ',cab:62,kg:22897,kc:12906,rd:56.4,me:7,tot:73473979,fk:3057.57,ti:'venta'},
+  {f:'2025-09-11',e:'KOKUE/DOMIZI',co:'FRG. RIOPLATENSE',cat:'VAC',cab:75,kg:38353,kc:20372,rd:53.1,me:7,tot:112172563,fk:2793.28,ti:'venta'},
+  {f:'2025-09-24',e:'KOKUE TUJA SRL',co:'FRG. RIOPLATENSE',cat:'VAC',cab:49,kg:23324,kc:12847,rd:55.1,me:7,tot:70658509,fk:2889.80,ti:'venta'},
+  {f:'2025-11-05',e:'KOKUE/DOMIZI',co:'TUTTO CARNE',cat:'VAQ',cab:43,kg:12964,kc:0,rd:0,me:7,tot:48007094,fk:3695.21,ti:'venta'},
+  {f:'2025-11-05',e:'KOKUE/DOMIZI',co:'COTO',cat:'NOV/VAQ',cab:36,kg:12788,kc:7189,rd:56.2,me:7,tot:48438805,fk:3642.66,ti:'venta'},
+  {f:'2025-11-06',e:'PALASESI',co:'COTO',cat:'NOV/VAQ',cab:66,kg:23436,kc:13371,rd:57.1,me:7,tot:90165153,fk:3719.94,ti:'venta'},
+  {f:'2025-11-19',e:'DICCHIARA',co:'COTO',cat:'VQ/NV',cab:71,kg:25315,kc:14280,rd:56.4,me:7,tot:103061185,fk:3904.65,ti:'venta'},
+  {f:'2025-11-22',e:'KOKUE TUJA SRL',co:'COTO',cat:'VQ/NV',cab:70,kg:25817,kc:14193,rd:55.0,me:7,tot:103929457,fk:3889.89,ti:'venta'},
+  {f:'2025-12-08',e:'PALASESI',co:'COTO',cat:'NV/VQ',cab:58,kg:20441,kc:11280,rd:55.2,me:7,tot:87539098,fk:4107.34,ti:'venta'},
+  {f:'2025-12-13',e:'KOKUE TUJA SRL',co:'COTO',cat:'VQ/NV',cab:46,kg:16628,kc:0,rd:0,me:7,tot:71051748,fk:4097.29,ti:'venta'},
+];
+
+let campF='ambas',tipoF='todo',catF='',empF='';
+let dateF={desde:'',hasta:''};
+const CH={};
+const fmt=v=>new Intl.NumberFormat('es-AR').format(Math.round(v||0));
+const fmtM=v=>'$'+(v/1e6).toFixed(1)+'M';
+const fmtP=v=>'$'+new Intl.NumberFormat('es-AR').format(Math.round(v||0));
+const fmtD=s=>{const[y,m,d]=s.split('-');const ms=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+m-1];return `${+d} ${ms} '${y.slice(2)}`;};
+const CCAT={'VC':'#7a4f2e','NV/VQ':'#1a6b8a','TER':'#c8941e','MEJ':'#2e7d4f','VQ/VC':'#5a7a3a','VAC/OVEROS':'#8b4a8b','VQ':'#d46b00','NT':'#6b8b6b','NOV/VAQ':'#3a7a9a','NOV':'#4a9a7a','VAC':'#9a6a2a','VAQ':'#6a4a8a','TERN/RAS':'#c8941e','TER/RAS':'#c07030','TERNERAS':'#d4a030','TER/VAQ':'#b86020','TER/TERNERA':'#c89030','NV/VQ/MEJ':'#1a6b8a','VQ/NV':'#1a6b8a','VC/VQ':'#7a4f2e','NV/VC':'#1a6b8a','NOV/VAC':'#4a9a7a','NOV/VQ':'#3a7a9a','VAQ/NV/MEJ':'#6a4a8a','VC/VQ/MEJ':'#7a4f2e','VQ/NV':'#5a7a3a'};
+const CC=['#1a6b8a','#2e7d4f','#c8941e','#7a4f2e','#8b4a8b','#5a7a3a','#d46b00','#3a5a8b','#6a9a4a'];
+
+function getData(){
+  let rows=[];
+  const a26=D26.map(r=>({...r,camp:'26/27'}));
+  const a25=D25.map(r=>({...r,camp:'25/26'}));
+  if(campF==='ambas'||campF==='2627') rows=[...rows,...a26];
+  if(campF==='ambas'||campF==='2526') rows=[...rows,...a25];
+  if(tipoF!=='todo') rows=rows.filter(r=>r.ti===tipoF);
+  if(catF) rows=rows.filter(r=>r.cat===catF);
+  if(empF) rows=rows.filter(r=>r.e===empF);
+  if(dateF.desde) rows=rows.filter(r=>r.f>=dateF.desde);
+  if(dateF.hasta) rows=rows.filter(r=>r.f<=dateF.hasta);
+  return rows;
+}
+
+function setCamp(v){
+  campF=v;
+  document.querySelectorAll('#seg-camp .seg-btn').forEach((b,i)=>b.classList.toggle('active',['ambas','2526','2627'][i]===v));
+  // Auto-set date range hint based on campaign
+  if(v==='2526'&&!dateF.desde&&!dateF.hasta){
+    document.getElementById('f-desde').value='2025-03-01';
+    document.getElementById('f-hasta').value='2026-02-28';
+    dateF={desde:'2025-03-01',hasta:'2026-02-28'};
+    updateDateActive();
+  } else if(v==='2627'&&!dateF.desde&&!dateF.hasta){
+    document.getElementById('f-desde').value='2026-03-01';
+    document.getElementById('f-hasta').value='2027-02-28';
+    dateF={desde:'2026-03-01',hasta:'2027-02-28'};
+    updateDateActive();
+  } else if(v==='ambas'){
+    clearDates();
+  }
+  refresh();
+}
+function setTipo(v){tipoF=v;document.querySelectorAll('#seg-tipo .seg-btn').forEach((b,i)=>b.classList.toggle('active',['todo','compra','venta'][i]===v));refresh();}
+
+function updateDateActive(){
+  const active=dateF.desde||dateF.hasta;
+  document.getElementById('date-group').classList.toggle('date-range-active',!!active);
+  document.getElementById('btn-clear-dates').style.display=active?'':'none';
+}
+function clearDates(){
+  dateF={desde:'',hasta:''};
+  document.getElementById('f-desde').value='';
+  document.getElementById('f-hasta').value='';
+  updateDateActive();
+  refresh();
+}
+// Preset shortcuts
+function setPreset(desde,hasta){
+  document.getElementById('f-desde').value=desde;
+  document.getElementById('f-hasta').value=hasta;
+  dateF={desde,hasta};
+  updateDateActive();
+  refresh();
+}
+
+function mkChart(id,cfg){if(CH[id])CH[id].destroy();const c=document.getElementById(id);if(!c)return;CH[id]=new Chart(c,cfg);}
+
+function renderBanner(){
+  const c26c=D26.filter(r=>r.ti==='compra'&&!r.p);
+  const c25c=D25.filter(r=>r.ti==='compra'&&!r.p);
+  const c26v=D26.filter(r=>r.ti==='venta'&&!r.p);
+  const c25v=D25.filter(r=>r.ti==='venta'&&!r.p);
+  const wp=(rows)=>rows.reduce((a,r)=>a+r.fk*r.kg,0)/rows.reduce((a,r)=>a+r.kg,0)||0;
+  const ac26c=wp(c26c),ac25c=wp(c25c),ac26v=wp(c26v),ac25v=wp(c25v);
+  const pct=(a,b)=>b?((a-b)/b*100).toFixed(1):0;
+  const ar=(v)=>+v>=0?`<span style="color:#1a4d2a">▲ +${v}%</span>`:`<span style="color:#8b1a14">▼ ${v}%</span>`;
+  document.getElementById('banner').innerHTML=`
+    <div class="bcard c26"><div class="bc-lbl">$/kg compra · 26/27</div><div class="bc-val">${fmtP(ac26c)}</div><div class="bc-sub">${c26c.reduce((a,r)=>a+r.cab,0)} cab · ${fmt(c26c.reduce((a,r)=>a+r.kg,0))} kg</div></div>
+    <div class="bcard c25"><div class="bc-lbl">$/kg compra · 25/26</div><div class="bc-val">${fmtP(ac25c)}</div><div class="bc-sub">${c25c.reduce((a,r)=>a+r.cab,0)} cab · ${fmt(c25c.reduce((a,r)=>a+r.kg,0))} kg</div></div>
+    <div class="bcard diff"><div class="bc-lbl">Variación compra interanual</div><div class="bc-val ${+pct(ac26c,ac25c)>=0?'up':'dn'}">${pct(ac26c,ac25c)}%</div><div class="bc-sub">${ar(pct(ac26c,ac25c))}</div></div>
+    <div class="bcard c26"><div class="bc-lbl">$/kg venta · 26/27</div><div class="bc-val">${fmtP(ac26v)}</div><div class="bc-sub">${c26v.reduce((a,r)=>a+r.cab,0)} cab · ${fmt(c26v.reduce((a,r)=>a+r.kg,0))} kg</div></div>
+    <div class="bcard c25"><div class="bc-lbl">$/kg venta · 25/26</div><div class="bc-val">${fmtP(ac25v)}</div><div class="bc-sub">${c25v.reduce((a,r)=>a+r.cab,0)} cab · ${fmt(c25v.reduce((a,r)=>a+r.kg,0))} kg</div></div>
+    <div class="bcard diff"><div class="bc-lbl">Variación venta interanual</div><div class="bc-val ${+pct(ac26v,ac25v)>=0?'up':'dn'}">${pct(ac26v,ac25v)}%</div><div class="bc-sub">${ar(pct(ac26v,ac25v))}</div></div>`;
+}
+
+function renderCharts(){
+  const all=getData();
+  const cc26=all.filter(r=>r.ti==='compra'&&r.camp==='26/27'&&!r.p).sort((a,b)=>a.f.localeCompare(b.f));
+  const cc25=all.filter(r=>r.ti==='compra'&&r.camp==='25/26'&&!r.p).sort((a,b)=>a.f.localeCompare(b.f));
+  const vc26=all.filter(r=>r.ti==='venta'&&r.camp==='26/27'&&!r.p).sort((a,b)=>a.f.localeCompare(b.f));
+  const vc25=all.filter(r=>r.ti==='venta'&&r.camp==='25/26'&&!r.p).sort((a,b)=>a.f.localeCompare(b.f));
+
+  const scOpts=(ds)=>({type:'scatter',data:{datasets:ds},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label} — ${c.raw._l}: ${fmtP(c.raw.y)}/kg`}}},
+    scales:{x:{display:false},y:{ticks:{callback:v=>'$'+fmt(v),font:{size:10}},beginAtZero:false,grid:{color:'rgba(0,0,0,.04)'}}}}});
+
+  mkChart('c-pc',scOpts([
+    {label:'25/26',data:cc25.map((r,i)=>({x:i,y:r.fk,_l:fmtD(r.f)+' '+r.cat})),backgroundColor:'rgba(155,61,122,.75)',pointRadius:6,borderColor:'#9b3d7a'},
+    {label:'26/27',data:cc26.map((r,i)=>({x:i+.4,y:r.fk,_l:fmtD(r.f)+' '+r.cat})),backgroundColor:'rgba(26,107,138,.75)',pointRadius:6,borderColor:'#1a6b8a'},
+  ]));
+  mkChart('c-pv',scOpts([
+    {label:'25/26',data:vc25.map((r,i)=>({x:i,y:r.fk,_l:fmtD(r.f)+' '+r.cat})),backgroundColor:'rgba(155,61,122,.75)',pointRadius:6,borderColor:'#9b3d7a'},
+    {label:'26/27',data:vc26.map((r,i)=>({x:i+.4,y:r.fk,_l:fmtD(r.f)+' '+r.cat})),backgroundColor:'rgba(26,107,138,.75)',pointRadius:6,borderColor:'#1a6b8a'},
+  ]));
+
+  // Mes a mes
+  const MESES=[2,3,4,5,6,7,8,9,10,11,0,1];
+  const ML=['Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic','Ene','Feb'];
+  const byMes=(rows,tipo)=>{const m={};rows.filter(r=>r.ti===tipo&&!r.p&&r.fk>0).forEach(r=>{const k=new Date(r.f).getMonth();if(!m[k])m[k]={s:0,kg:0};m[k].s+=r.fk*r.kg;m[k].kg+=r.kg;});return MESES.map(m2=>m[m2]&&m[m2].kg>0?Math.round(m[m2].s/m[m2].kg):null);};
+  const lineOpts=(ds)=>({type:'line',data:{labels:ML,datasets:ds},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:12}}},
+    scales:{x:{ticks:{font:{size:10}}},y:{ticks:{callback:v=>'$'+fmt(v),font:{size:10}},beginAtZero:false,grid:{color:'rgba(0,0,0,.04)'}}}}});
+  mkChart('c-mc',lineOpts([
+    {label:'25/26',data:byMes(D25,'compra'),borderColor:'#9b3d7a',backgroundColor:'rgba(155,61,122,.08)',tension:.35,pointRadius:4,spanGaps:true,fill:true},
+    {label:'26/27',data:byMes(D26,'compra'),borderColor:'#1a6b8a',backgroundColor:'rgba(26,107,138,.08)',tension:.35,pointRadius:4,spanGaps:true,fill:true},
+  ]));
+  mkChart('c-mv',lineOpts([
+    {label:'25/26',data:byMes(D25,'venta'),borderColor:'#9b3d7a',backgroundColor:'rgba(155,61,122,.08)',tension:.35,pointRadius:4,spanGaps:true,fill:true},
+    {label:'26/27',data:byMes(D26,'venta'),borderColor:'#1a6b8a',backgroundColor:'rgba(26,107,138,.08)',tension:.35,pointRadius:4,spanGaps:true,fill:true},
+  ]));
+
+  // Cat donut
+  const cm={};all.forEach(r=>{cm[r.cat]=(cm[r.cat]||0)+r.cab;});
+  const ck=Object.keys(cm).sort((a,b)=>cm[b]-cm[a]).slice(0,9);
+  mkChart('c-cat',{type:'doughnut',data:{labels:ck,datasets:[{data:ck.map(k=>cm[k]),backgroundColor:ck.map(k=>CCAT[k]||'#aaa'),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'52%',plugins:{legend:{position:'right',labels:{font:{size:9},padding:6,boxWidth:10}},tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw} cab`}}}}});
+
+  // Rendimiento
+  const vr=all.filter(r=>r.ti==='venta'&&r.rd>0).sort((a,b)=>a.f.localeCompare(b.f));
+  mkChart('c-rend',{type:'bar',
+    data:{labels:vr.map(r=>fmtD(r.f).slice(0,6)),datasets:[{data:vr.map(r=>r.rd),backgroundColor:vr.map(r=>r.camp==='26/27'?'rgba(26,107,138,.75)':'rgba(155,61,122,.75)'),borderWidth:0,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${vr[c.dataIndex].camp}: ${c.raw.toFixed(1)}%`}}},
+      scales:{x:{ticks:{font:{size:8},maxRotation:45}},y:{min:50,max:65,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}}}});
+
+  // Compradores
+  const cop={};all.filter(r=>r.ti==='venta'&&r.co).forEach(r=>{cop[r.co]=(cop[r.co]||0)+r.kg;});
+  const cok=Object.keys(cop).sort((a,b)=>cop[b]-cop[a]).slice(0,7);
+  mkChart('c-comp',{type:'bar',data:{labels:cok,datasets:[{data:cok.map(k=>cop[k]/1000),backgroundColor:CC,borderWidth:0,borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>Math.round(c.raw*1000)+' kg'}}},
+      scales:{x:{ticks:{callback:v=>v+'t',font:{size:9}}},y:{ticks:{font:{size:9}}}}}});
+}
+
+function renderTablas(){
+  const all=getData();
+  // Cat selector
+  const allC=[...new Set([...D26,...D25].map(r=>r.cat))].sort();
+  const sel=document.getElementById('sel-cat');const cur=sel.value;
+  sel.innerHTML='<option value="">Todas</option>'+allC.map(c=>`<option${c===cur?' selected':''}>${c}</option>`).join('');
+
+  const compras=all.filter(r=>r.ti==='compra').sort((a,b)=>b.f.localeCompare(a.f));
+  const ventas=all.filter(r=>r.ti==='venta').sort((a,b)=>b.f.localeCompare(a.f));
+  document.getElementById('cc').textContent=compras.length+' op.';
+  document.getElementById('vc').textContent=ventas.length+' op.';
+
+  document.getElementById('tc').innerHTML=compras.map(r=>`<tr>
+    <td>${fmtD(r.f)}</td><td>${r.e.length>20?r.e.slice(0,20)+'…':r.e}</td>
+    <td><span class="badge bcat">${r.cat}</span></td><td>${fmt(r.cab)}</td>
+    <td>${fmt(r.kg)} kg</td><td>${r.kp>0?r.kp+' kg':'—'}</td>
+    <td>${r.me!==0&&r.me<50?(r.me>0?'▼ ':'')+Math.abs(r.me).toFixed(1)+'%':'—'}</td>
+    <td>${r.p?'<span class="badge bpend">Pend</span>':fmtM(r.tot)}</td>
+    <td class="${r.p?'':'nn'}">${r.p?'<span class="badge bpend">—</span>':fmtP(r.fk)+'/kg'}</td>
+    <td><span class="badge ${r.camp==='26/27'?'b26':'b25'}">${r.camp}</span></td>
+  </tr>`).join('');
+  const cpP=compras.filter(r=>!r.p);
+  const totKc=compras.reduce((a,r)=>a+r.cab,0),totKg=compras.reduce((a,r)=>a+r.kg,0),totT=cpP.reduce((a,r)=>a+r.tot,0);
+  const avgF=cpP.length?cpP.reduce((a,r)=>a+r.fk*r.kg,0)/cpP.reduce((a,r)=>a+r.kg,0):0;
+  document.getElementById('tcf').innerHTML=`<tr><td colspan="3">TOTAL</td><td>${fmt(totKc)}</td><td>${fmt(totKg)} kg</td><td>—</td><td>—</td><td>${fmtM(totT)}</td><td>${fmtP(avgF)}/kg</td><td>—</td></tr>`;
+
+  document.getElementById('tv').innerHTML=ventas.map(r=>`<tr>
+    <td>${fmtD(r.f)}</td><td>${r.e.length>18?r.e.slice(0,18)+'…':r.e}</td>
+    <td>${r.co||'—'}</td><td><span class="badge bcat">${r.cat}</span></td><td>${fmt(r.cab)}</td>
+    <td>${fmt(r.kg)} kg</td><td>${r.kc>0?fmt(r.kc)+' kg':'—'}</td>
+    <td>${r.rd>0?`<span class="${r.rd>=57?'nu':r.rd>=54?'nn':'nd'}">${r.rd.toFixed(1)}%</span>`:'—'}</td>
+    <td>${r.me}%</td>
+    <td>${r.p?'<span class="badge bpend">Pend</span>':fmtM(r.tot)}</td>
+    <td class="${r.p?'':'nu'}">${r.p?'<span class="badge bpend">—</span>':fmtP(r.fk)+'/kg'}</td>
+    <td><span class="badge ${r.camp==='26/27'?'b26':'b25'}">${r.camp}</span></td>
+  </tr>`).join('');
+  const vpP=ventas.filter(r=>!r.p);
+  const vtC=ventas.reduce((a,r)=>a+r.cab,0),vtKg=ventas.reduce((a,r)=>a+r.kg,0),vtT=vpP.reduce((a,r)=>a+r.tot,0);
+  const vAvg=vpP.length?vpP.reduce((a,r)=>a+r.fk*r.kg,0)/vpP.reduce((a,r)=>a+r.kg,0):0;
+  document.getElementById('tvf').innerHTML=`<tr><td colspan="4">TOTAL</td><td>${fmt(vtC)}</td><td>${fmt(vtKg)} kg</td><td>—</td><td>—</td><td>7%</td><td>${fmtM(vtT)}</td><td>${fmtP(vAvg)}/kg</td><td>—</td></tr>`;
+}
+
+document.getElementById('sel-cat').addEventListener('change',()=>{catF=document.getElementById('sel-cat').value;refresh();});
+document.getElementById('sel-emp').addEventListener('change',()=>{empF=document.getElementById('sel-emp').value;refresh();});
+
+function refresh(){renderBanner();renderCharts();renderTablas();}
+refresh();
+</script>
+</body>
+</html>
