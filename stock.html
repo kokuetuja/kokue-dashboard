@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kokue Tuja — Stock</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{--brown:#8B6347;--brown-dark:#3d2410;--brown-mid:#7a4f2e;--gold:#c8941e;--cream:#faf6f0;--cream-2:#f0e8dc;--cream-3:#e8d8c4;--ink:#2a1f14;--ink-2:#6b5040;--ink-3:#a0897a;--border:#d9c9b8;--c26:#1a6b8a;--c25:#9b3d7a;--good-bg:#d4e8da;--good-txt:#1a4d2a;--mid-bg:#fdefc7;--mid-txt:#7a4f00;--low-bg:#fad7d4;--low-txt:#8b1a14;}
+*{margin:0;padding:0;box-sizing:border-box;}html{background:var(--cream);color:var(--ink);font-family:'Barlow',sans-serif;font-size:14px;}
+.nav{background:var(--brown-dark);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:52px;position:sticky;top:0;z-index:200;}
+.nav-brand{color:#f5e8d8;font-family:'Libre Baskerville',serif;font-size:13px;}
+.nav-links{display:flex;gap:2px;}
+.nav-link{color:rgba(245,232,216,0.55);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:6px 12px;border-radius:3px;text-decoration:none;transition:all .15s;}
+.nav-link:hover{background:rgba(245,232,216,0.1);color:#f5e8d8;}.nav-link.active{background:rgba(245,232,216,0.15);color:#f5e8d8;}
+.live-badge{background:rgba(46,180,100,0.2);border:1px solid rgba(46,180,100,0.5);color:#4ade80;font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:3px;display:flex;align-items:center;gap:4px;}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.btn-reload{background:transparent;border:1px solid rgba(245,232,216,0.3);color:#f5e8d8;font-family:'DM Mono',monospace;font-size:9px;padding:4px 10px;border-radius:3px;cursor:pointer;letter-spacing:0.08em;}
+.btn-reload:hover{background:rgba(245,232,216,0.1);}
+.upd-note{margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-3);opacity:.75;letter-spacing:.04em;white-space:nowrap;}
+.load-overlay{position:fixed;inset:0;background:var(--cream);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;z-index:999;}
+.load-brand{font-family:'Libre Baskerville',serif;font-size:1.4rem;color:var(--brown-mid);margin-bottom:.3rem;}
+.load-bar{width:260px;height:3px;background:var(--cream-3);border-radius:2px;overflow:hidden;}
+.load-fill{height:100%;background:var(--gold);border-radius:2px;animation:ld 1.4s ease-in-out infinite;}
+@keyframes ld{0%{width:0%;margin-left:0;}50%{width:60%;margin-left:20%;}100%{width:0%;margin-left:100%;}}
+.load-txt{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-3);letter-spacing:0.1em;}
+.load-err{background:#fff;border:1px solid var(--low-bg);color:var(--low-txt);padding:1rem 1.5rem;border-radius:6px;font-size:12px;display:none;max-width:440px;text-align:center;line-height:1.5;}
+.filter-bar{background:#fff;border-bottom:1px solid var(--border);padding:0.55rem 1.5rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;position:sticky;top:52px;z-index:100;}
+.filter-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap;}
+.filter-group{display:flex;align-items:center;gap:6px;}
+.seg{display:flex;border:0.5px solid var(--border);border-radius:4px;overflow:hidden;}
+.seg-btn{padding:4px 11px;font-size:11px;border:none;background:transparent;color:var(--ink-2);cursor:pointer;font-family:'Barlow',sans-serif;white-space:nowrap;transition:all .12s;}
+.seg-btn+.seg-btn{border-left:0.5px solid var(--border);}
+.seg-btn.active{background:var(--brown-dark);color:#f5e8d8;}.seg-btn:hover:not(.active){background:var(--cream-2);}
+.main{padding:1.25rem 1.5rem;max-width:1600px;margin:0 auto;}
+.banner{display:flex;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap;}
+.bcard{flex:1;min-width:130px;background:#fff;border:0.5px solid var(--border);border-radius:6px;padding:.75rem 1rem;position:relative;overflow:hidden;}
+.bcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.bcard.k1::before{background:var(--brown-mid);}.bcard.k2::before{background:var(--c26);}.bcard.k3::before{background:var(--gold);}.bcard.k4::before{background:var(--good-txt);}
+.bc-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:3px;}
+.bc-val{font-family:'Libre Baskerville',serif;font-size:1.35rem;font-weight:700;color:var(--brown-mid);line-height:1;}
+.bc-sub{font-size:10px;color:var(--ink-3);margin-top:4px;}
+.sep{display:flex;align-items:center;gap:10px;margin:1.25rem 0 .75rem;}
+.sep-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap;}
+.sep-line{flex:1;height:.5px;background:var(--border);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.box{background:#fff;border:.5px solid var(--border);border-radius:6px;padding:1rem;}
+.box-ttl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.chart-wrap{position:relative;}
+.tbox{background:#fff;border:.5px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:1rem;}
+.thead-b{padding:.6rem 1rem;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.tttl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);}
+.twrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{background:var(--brown-dark);}
+thead th{padding:6px 9px;text-align:right;color:#f5e8d8;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;}
+thead th:first-child{text-align:left;}
+tbody tr{border-bottom:.5px solid var(--cream-2);}tbody tr:hover{background:var(--cream-2);}
+tbody td{padding:5px 9px;text-align:right;white-space:nowrap;}
+tbody td:first-child{text-align:left;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-2);}
+tfoot td{padding:5px 9px;text-align:right;font-weight:700;background:var(--cream-3);border-top:1px solid var(--border);}
+tfoot td:first-child{text-align:left;}
+.badge{display:inline-block;padding:2px 6px;border-radius:3px;font-family:'DM Mono',monospace;font-size:8px;background:var(--cream-2);color:var(--ink-2);}
+.pinput{width:78px;border:0.5px solid var(--border);border-radius:3px;padding:2px 6px;font-family:'DM Mono',monospace;font-size:11px;text-align:right;color:var(--ink);background:var(--cream);}
+.pinput:focus{outline:none;border-color:var(--gold);background:#fff;}
+.val-total{background:var(--brown-dark);color:#f5e8d8;border-radius:6px;padding:.8rem 1.1rem;margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;}
+.vt-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(245,232,216,.6);}
+.vt-val{font-family:'Libre Baskerville',serif;font-size:1.6rem;color:#f5e8d8;line-height:1;}
+@media(max-width:900px){.g2{grid-template-columns:1fr;}.filter-bar{gap:.75rem;}}
+
+/* nav responsive (6 módulos) */
+@media(max-width:820px){
+  .nav{height:auto;flex-wrap:wrap;justify-content:center;gap:4px;padding:8px 1rem;}
+  .nav-links{flex-wrap:wrap;justify-content:center;}
+}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand">Kokue Tuja</div>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">Inicio</a>
+    <a class="nav-link" href="facturacion.html">Facturación</a>
+    <a class="nav-link" href="hacienda.html">Hacienda</a>
+    <a class="nav-link active" href="stock.html">Stock</a>
+    <a class="nav-link" href="maiz.html">Maíz</a>
+    <a class="nav-link" href="creditos.html">Créditos</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+    <button class="btn-reload" onclick="loadData()">↺ Actualizar</button>
+  </div>
+</nav>
+
+<div class="load-overlay" id="load-overlay">
+  <div class="load-brand">Kokue Tuja</div>
+  <div class="load-bar"><div class="load-fill"></div></div>
+  <div class="load-txt">Cargando stock desde Google Sheets…</div>
+  <div class="load-err" id="load-err"></div>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-group">
+    <span class="filter-label">Empresa</span>
+    <div class="seg" id="seg-emp">
+      <button class="seg-btn active" onclick="setEmp('')">Ambas</button>
+      <button class="seg-btn" onclick="setEmp('KOKUE TUJA SRL')">Kokue Tuja</button>
+      <button class="seg-btn" onclick="setEmp('SOC. KOKUE-DOMIZI')">Soc. Kokue-Domizi</button>
+    </div>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Cabezas</span>
+    <div class="seg" id="seg-base">
+      <button class="seg-btn active" onclick="setBase('fisico')">Físico</button>
+      <button class="seg-btn" onclick="setBase('propio')">Participación propia</button>
+    </div>
+  </div>
+  <span class="upd-note" id="upd-note"></span>
+</div>
+
+<div class="main">
+  <div class="banner" id="banner"></div>
+
+  <div class="sep"><div class="sep-lbl">Valorización del stock</div><div class="sep-line"></div></div>
+  <div class="val-total" id="val-total"></div>
+  <div class="tbox" style="margin-bottom:1rem;">
+    <div class="thead-b"><div class="tttl">Valor por grupo — Cabezas × Kg prom × $/kg</div><span id="val-base" class="badge"></span></div>
+    <div class="twrap"><table>
+      <thead><tr><th>Grupo</th><th>Cabezas</th><th>Kg totales</th><th>$/kg</th><th>Valor</th></tr></thead>
+      <tbody id="t-val"></tbody><tfoot id="tf-val"></tfoot>
+    </table></div>
+  </div>
+
+  <div class="sep"><div class="sep-lbl">Composición del stock</div><div class="sep-line"></div></div>
+  <div class="g2">
+    <div class="box">
+      <div class="box-ttl">Cabezas por categoría</div>
+      <div class="chart-wrap" style="height:210px;"><canvas id="c-cat"></canvas></div>
+    </div>
+    <div class="box">
+      <div class="box-ttl">Cabezas por rango de peso</div>
+      <div class="chart-wrap" style="height:210px;"><canvas id="c-rango"></canvas></div>
+    </div>
+  </div>
+
+  <div class="sep"><div class="sep-lbl">Distribución por corral</div><div class="sep-line"></div></div>
+  <div class="box" style="margin-bottom:1rem;">
+    <div class="box-ttl">Cabezas por corral</div>
+    <div class="chart-wrap" style="height:260px;"><canvas id="c-corral"></canvas></div>
+  </div>
+
+  <div class="sep"><div class="sep-lbl">Detalle</div><div class="sep-line"></div></div>
+
+  <div class="tbox">
+    <div class="thead-b"><div class="tttl">Stock por categoría</div><span id="cnt-cat" class="badge"></span></div>
+    <div class="twrap"><table>
+      <thead><tr><th>Categoría</th><th>Cabezas</th><th>%</th><th>Peso Proy.</th><th>Estadía</th></tr></thead>
+      <tbody id="t-cat"></tbody><tfoot id="tf-cat"></tfoot>
+    </table></div>
+  </div>
+
+  <div class="tbox">
+    <div class="thead-b"><div class="tttl">Stock por rango de peso</div><span id="cnt-rango" class="badge"></span></div>
+    <div class="twrap"><table>
+      <thead><tr><th>Rango</th><th>Cabezas</th><th>%</th><th>Peso Proy.</th></tr></thead>
+      <tbody id="t-rango"></tbody><tfoot id="tf-rango"></tfoot>
+    </table></div>
+  </div>
+
+  <div class="tbox">
+    <div class="thead-b"><div class="tttl">Stock por corral</div><span id="cnt-corral" class="badge"></span></div>
+    <div class="twrap"><table>
+      <thead><tr><th>Corral</th><th>Cabezas</th><th>%</th></tr></thead>
+      <tbody id="t-corral"></tbody><tfoot id="tf-corral"></tfoot>
+    </table></div>
+  </div>
+</div>
+
+<script>
+// ====== CONFIG ======
+// URL de la planilla "Publicada en la web" como CSV (Archivo > Compartir > Publicar en la web).
+// Si algún día republicás o cambiás de planilla, reemplazá esta URL.
+const URL_STOCK = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTRqLk-e-whFtw9U398Lf5hClzJfeeyw2ClbV4PR8A_2WvjuSCUku9yW70pvirtuVUnM2bjN9ncRNVi/pub?output=csv';
+
+// Participación propia por empresa (1 = 100% tuyo). Si cambia la sociedad, editá acá.
+const PART = {'KOKUE TUJA SRL':1, 'SOC. KOKUE-DOMIZI':0.5};
+const part = e => PART[e] !== undefined ? PART[e] : 1;
+
+// ====== ESTADO ======
+let STOCK = [];
+let empF = '', baseF = 'fisico';
+const CH = {};
+
+// ====== HELPERS ======
+const fmt = v => new Intl.NumberFormat('es-AR').format(Math.round(v||0));
+const fmt1 = v => new Intl.NumberFormat('es-AR',{maximumFractionDigits:1}).format(v||0);
+const CCAT = {'TH':'#1a6b8a','TM':'#c8941e','VA':'#7a4f2e'};
+const CC = ['#1a6b8a','#2e7d4f','#c8941e','#7a4f2e','#8b4a8b','#5a7a3a','#d46b00','#3a5a8b','#6a9a4a','#9a6a2a','#4a9a7a','#6a4a8a','#b86020','#3a7a9a'];
+
+function parseNum(s){
+  if(s===0) return 0;
+  if(!s) return 0;
+  s = s.toString().trim();
+  if(!s || /^(—|–|-)?$/.test(s)) return 0;
+  s = s.replace(/[^0-9.,-]/g,'').trim();
+  if(!s) return 0;
+  const dots=(s.match(/\./g)||[]).length, commas=(s.match(/,/g)||[]).length;
+  if(dots>0&&commas>0){ if(s.lastIndexOf('.')>s.lastIndexOf(',')) s=s.replace(/,/g,''); else s=s.replace(/\./g,'').replace(',','.'); }
+  else if(commas===1){ const a=s.split(',')[1]; s = a&&a.length===3 ? s.replace(',','') : s.replace(',','.'); }
+  else if(commas>1){ s=s.replace(/,/g,''); }
+  else if(dots===1){ const a=s.split('.')[1]; if(a&&a.length===3) s=s.replace('.',''); }
+  else if(dots>1){ s=s.replace(/\./g,''); }
+  return parseFloat(s)||0;
+}
+
+function normDim(d){
+  d=(d||'').toLowerCase();
+  if(d.includes('categor')) return 'cat';
+  if(d.includes('rango'))   return 'rango';
+  if(d.includes('corral'))  return 'corral';
+  return d;
+}
+
+function parseStock(csv){
+  const {data} = Papa.parse(csv, {skipEmptyLines:true});
+  let h = data.findIndex(r => r.some(c => (c||'').toString().toLowerCase().trim()==='empresa'));
+  if(h<0) h=0;
+  const hdr = data[h];
+  const H = hdr.map(x => (x||'').toString().toLowerCase().trim());
+  const col = (...t) => H.findIndex(x => t.some(k => x.includes(k)));
+  const iEmp=col('empresa'), iDim=col('dimension','dimensión','dimensi'), iDet=col('detalle'), iCab=col('cabeza'), iPeso=col('peso'), iEst=col('estad');
+  // Fecha de actualización: primera celda con texto a la derecha de las columnas conocidas (ej. H1)
+  let updated='';
+  const maxKnown = Math.max(iEmp,iDim,iDet,iCab,iPeso,iEst);
+  for(let i=maxKnown+1;i<hdr.length;i++){ const v=(hdr[i]||'').toString().trim(); if(v){ updated=v; break; } }
+  const out=[];
+  for(const r of data.slice(h+1)){
+    if(!r) continue;
+    const emp=(r[iEmp]||'').toString().trim();
+    const det=(r[iDet]||'').toString().trim();
+    const cab=parseNum(r[iCab]);
+    if(!emp||!det||cab<=0) continue;
+    out.push({emp, dim:normDim(r[iDim]), det, cab, peso:parseNum(r[iPeso]), est:parseNum(r[iEst])});
+  }
+  return {rows:out, updated};
+}
+
+// Agrega por Detalle según empresa/base activos
+function agg(dim){
+  const rows = STOCK.filter(r => r.dim===dim && (!empF || r.emp===empF));
+  const m={};
+  rows.forEach(r=>{
+    const eff = baseF==='propio' ? r.cab*part(r.emp) : r.cab;
+    if(!m[r.det]) m[r.det]={det:r.det, cab:0, pw:0, ew:0, w:0};
+    m[r.det].cab += eff;
+    m[r.det].pw  += r.peso*eff;
+    m[r.det].ew  += r.est*eff;
+    m[r.det].w   += eff;
+  });
+  return Object.values(m).map(o=>({det:o.det, cab:o.cab, peso:o.w?o.pw/o.w:0, est:o.w?o.ew/o.w:0}));
+}
+
+const rangoNum = d => { const m=(d||'').match(/(\d+)/); return m ? +m[1] : 999999; };
+
+function mkChart(id, cfg){
+  const el=document.getElementById(id); if(!el) return;
+  if(CH[id]) CH[id].destroy();
+  CH[id]=new Chart(el.getContext('2d'), cfg);
+}
+
+// ====== RENDER ======
+function renderBanner(){
+  const cat = agg('cat');
+  const totEff = cat.reduce((a,o)=>a+o.cab,0);
+  const estProm = totEff ? cat.reduce((a,o)=>a+o.est*o.cab,0)/totEff : 0;
+  const pesoProm = totEff ? cat.reduce((a,o)=>a+o.peso*o.cab,0)/totEff : 0;
+  const nCorr = agg('corral').filter(o=>o.cab>0).length;
+
+  // físico vs propio para el subtítulo
+  const base = STOCK.filter(r=>r.dim==='cat' && (!empF||r.emp===empF));
+  const fis = base.reduce((a,r)=>a+r.cab,0);
+  const prop = base.reduce((a,r)=>a+r.cab*part(r.emp),0);
+  const sub = baseF==='propio'
+      ? `físico: ${fmt(fis)} cab`
+      : (empF ? '100% físico' : `propias (50% soc): ${fmt1(prop)} cab`);
+
+  document.getElementById('banner').innerHTML = `
+    <div class="bcard k1"><div class="bc-lbl">Total cabezas</div><div class="bc-val">${baseF==='propio'?fmt1(totEff):fmt(totEff)}</div><div class="bc-sub">${sub}</div></div>
+    <div class="bcard k2"><div class="bc-lbl">Estadía promedio</div><div class="bc-val">${fmt1(estProm)}</div><div class="bc-sub">días · ponderado por cabezas</div></div>
+    <div class="bcard k3"><div class="bc-lbl">Peso proy. promedio</div><div class="bc-val">${fmt(pesoProm)}</div><div class="bc-sub">kg · ponderado por cabezas</div></div>
+    <div class="bcard k4"><div class="bc-lbl">Corrales activos</div><div class="bc-val">${nCorr}</div><div class="bc-sub">${empF?empF.split(' ')[0]:'ambas empresas'}</div></div>`;
+}
+
+function renderCharts(){
+  // Categoría (donut)
+  const cat = agg('cat').sort((a,b)=>b.cab-a.cab);
+  mkChart('c-cat',{type:'doughnut',
+    data:{labels:cat.map(o=>o.det),datasets:[{data:cat.map(o=>Math.round(o.cab)),backgroundColor:cat.map((o,i)=>CCAT[o.det]||CC[i%CC.length]),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'54%',plugins:{legend:{position:'right',labels:{font:{size:11},padding:8,boxWidth:12}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.raw)} cab`}}}}});
+
+  // Rango (barras verticales, ordenado por peso)
+  const rango = agg('rango').sort((a,b)=>rangoNum(a.det)-rangoNum(b.det));
+  mkChart('c-rango',{type:'bar',
+    data:{labels:rango.map(o=>o.det),datasets:[{data:rango.map(o=>Math.round(o.cab)),backgroundColor:'rgba(26,107,138,.8)',borderRadius:3,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmt(c.raw)} cab`}}},
+      scales:{x:{ticks:{font:{size:9},maxRotation:45,minRotation:30}},y:{ticks:{font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}}}});
+
+  // Corral (barras horizontales, ordenado desc)
+  const corral = agg('corral').sort((a,b)=>b.cab-a.cab);
+  mkChart('c-corral',{type:'bar',
+    data:{labels:corral.map(o=>o.det),datasets:[{data:corral.map(o=>Math.round(o.cab)),backgroundColor:corral.map((o,i)=>CC[i%CC.length]),borderRadius:3,borderWidth:0}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmt(c.raw)} cab`}}},
+      scales:{x:{ticks:{font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:9}}}}}});
+}
+
+function renderTablas(){
+  // Categoría
+  const cat = agg('cat').sort((a,b)=>b.cab-a.cab);
+  const totC = cat.reduce((a,o)=>a+o.cab,0);
+  document.getElementById('cnt-cat').textContent = cat.length+' categorías';
+  document.getElementById('t-cat').innerHTML = cat.map(o=>`<tr>
+    <td>${o.det}</td><td>${baseF==='propio'?fmt1(o.cab):fmt(o.cab)}</td>
+    <td>${totC?fmt1(o.cab/totC*100):'0'}%</td><td>${fmt(o.peso)} kg</td><td>${fmt1(o.est)}</td>
+  </tr>`).join('');
+  document.getElementById('tf-cat').innerHTML = `<tr><td>TOTAL</td><td>${baseF==='propio'?fmt1(totC):fmt(totC)}</td><td>100%</td><td>—</td><td>—</td></tr>`;
+
+  // Rango
+  const rango = agg('rango').sort((a,b)=>rangoNum(a.det)-rangoNum(b.det));
+  const totR = rango.reduce((a,o)=>a+o.cab,0);
+  document.getElementById('cnt-rango').textContent = rango.length+' rangos';
+  document.getElementById('t-rango').innerHTML = rango.map(o=>`<tr>
+    <td>${o.det}</td><td>${baseF==='propio'?fmt1(o.cab):fmt(o.cab)}</td>
+    <td>${totR?fmt1(o.cab/totR*100):'0'}%</td><td>${fmt(o.peso)} kg</td>
+  </tr>`).join('');
+  document.getElementById('tf-rango').innerHTML = `<tr><td>TOTAL</td><td>${baseF==='propio'?fmt1(totR):fmt(totR)}</td><td>100%</td><td>—</td></tr>`;
+
+  // Corral
+  const corral = agg('corral').sort((a,b)=>b.cab-a.cab);
+  const totCo = corral.reduce((a,o)=>a+o.cab,0);
+  document.getElementById('cnt-corral').textContent = corral.length+' corrales';
+  document.getElementById('t-corral').innerHTML = corral.map(o=>`<tr>
+    <td>${o.det}</td><td>${baseF==='propio'?fmt1(o.cab):fmt(o.cab)}</td>
+    <td>${totCo?fmt1(o.cab/totCo*100):'0'}%</td>
+  </tr>`).join('');
+  document.getElementById('tf-corral').innerHTML = `<tr><td>TOTAL</td><td>${baseF==='propio'?fmt1(totCo):fmt(totCo)}</td><td>100%</td></tr>`;
+}
+
+// ====== VALORIZACIÓN ======
+// Precios por defecto ($/kg). Editables en la página; se recuerdan en el navegador.
+const PRECIO_DEFAULT = {VAC:3000, TER:5100, NOV:5000};
+const GRUPO_DE  = {'VA':'VAC','TH':'TER','TM':'TER','NV':'NOV','VQ':'NOV'};
+const GRUPO_LBL = {VAC:'Vacas', TER:'Terneros / Terneras', NOV:'Novillos / Vaquillonas', OTR:'Otros (sin precio)'};
+const GRUPO_ORD = ['VAC','TER','NOV','OTR'];
+
+function loadPrecios(){
+  try{ const s=localStorage.getItem('stock_precios'); if(s) return {...PRECIO_DEFAULT, ...JSON.parse(s)}; }catch(e){}
+  return {...PRECIO_DEFAULT};
+}
+function savePrecios(){ try{ localStorage.setItem('stock_precios', JSON.stringify(precios)); }catch(e){} }
+let precios = loadPrecios();
+function setPrecio(gid, v){ precios[gid]=parseNum(v); savePrecios(); renderValor(); }
+
+function renderValor(){
+  const cat = agg('cat');
+  const g = {};
+  cat.forEach(o=>{
+    const gid = GRUPO_DE[(o.det||'').toUpperCase()] || 'OTR';
+    if(!g[gid]) g[gid]={cab:0, kg:0};
+    g[gid].cab += o.cab;
+    g[gid].kg  += o.cab * o.peso;   // Cabezas × Kg prom = kg totales del grupo
+  });
+  let tKg=0, tVal=0, tCab=0;
+  const rows = GRUPO_ORD.filter(gid=>g[gid]).map(gid=>{
+    const precio = gid==='OTR' ? 0 : (precios[gid]||0);
+    const val = g[gid].kg * precio;
+    tKg+=g[gid].kg; tVal+=val; tCab+=g[gid].cab;
+    return {gid, cab:g[gid].cab, kg:g[gid].kg, precio, val};
+  });
+  const baseLbl = baseF==='propio' ? 'participación propia' : 'físico';
+  document.getElementById('val-base').textContent = baseLbl + (empF ? ' · '+empF.split(' ')[0] : '');
+  document.getElementById('val-total').innerHTML =
+    `<span class="vt-lbl">Valor total del stock · ${baseLbl}</span><span class="vt-val">$ ${fmt(tVal)}</span>`;
+  document.getElementById('t-val').innerHTML = rows.map(r=>`<tr>
+    <td>${GRUPO_LBL[r.gid]}</td>
+    <td>${baseF==='propio'?fmt1(r.cab):fmt(r.cab)}</td>
+    <td>${fmt(r.kg)} kg</td>
+    <td>${r.gid==='OTR' ? '—' : '$ <input type="number" min="0" step="50" class="pinput" value="'+r.precio+'" onchange="setPrecio(\''+r.gid+'\',this.value)">'}</td>
+    <td>$ ${fmt(r.val)}</td>
+  </tr>`).join('');
+  document.getElementById('tf-val').innerHTML = `<tr>
+    <td>TOTAL</td><td>${baseF==='propio'?fmt1(tCab):fmt(tCab)}</td>
+    <td>${fmt(tKg)} kg</td><td>—</td><td>$ ${fmt(tVal)}</td></tr>`;
+}
+
+function refresh(){ renderBanner(); renderValor(); renderCharts(); renderTablas(); }
+
+function setEmp(v){ empF=v; document.querySelectorAll('#seg-emp .seg-btn').forEach((b,i)=>b.classList.toggle('active',['','KOKUE TUJA SRL','SOC. KOKUE-DOMIZI'][i]===v)); refresh(); }
+function setBase(v){ baseF=v; document.querySelectorAll('#seg-base .seg-btn').forEach((b,i)=>b.classList.toggle('active',['fisico','propio'][i]===v)); refresh(); }
+
+async function loadData(){
+  const overlay=document.getElementById('load-overlay'), errDiv=document.getElementById('load-err');
+  overlay.style.display='flex'; errDiv.style.display='none';
+  Object.values(CH).forEach(c=>{try{c.destroy();}catch(e){}});
+  try{
+    const txt = await fetch(URL_STOCK,{redirect:'follow'}).then(r=>r.text());
+    const parsed = parseStock(txt);
+    STOCK = parsed.rows;
+    if(!STOCK.length) throw new Error('No se encontró la tabla o la fila de encabezados (Empresa, Dimension, Detalle, Cabezas…).');
+    const note = document.getElementById('upd-note');
+    note.textContent = parsed.updated ? 'Últimos datos actualizados: '+parsed.updated : 'Sin fecha de actualización';
+    overlay.style.display='none';
+    refresh();
+  }catch(err){
+    errDiv.style.display='block';
+    errDiv.innerHTML = 'No se pudieron cargar los datos.<br>'+err.message+'<br><br>Verificá que la planilla esté compartida como "Cualquiera con el enlace (Lector)".';
+    console.error(err);
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
