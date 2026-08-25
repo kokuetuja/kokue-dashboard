@@ -177,11 +177,8 @@ tfoot td:first-child,tfoot td:nth-child(2){text-align:left;}
   .nav-links{flex-wrap:wrap;justify-content:center;}
 }
 </style>
-
-
-<script src="login.js"></script>
 <style id="kokue-auth-styles">
-/* Facturacion: hide outer nav.nav - uses internal topbar */
+/* Facturacion uses internal topbar - hide outer nav.nav */
 nav.nav { display:none !important; }
 .nav-links { display:none !important; }
 #kokue-global-nav { display:flex !important; }
@@ -190,16 +187,16 @@ body { padding-top: 2px; }
   nav, nav.nav, .topbar, .sidebar, .tabs, .btn-toggle, .btn-reload,
   #kokue-global-nav, #kokue-logout-btn, #kokue-print-btn,
   #kokue-user-label, #kokue-session-bar-wrap, #kokue-mobile-toggle,
-  #kokue-nav-right, #kokue-warning, .filter-group, .chart-mode-btn,
-  .nav-brand, .nav-links, .live-badge, .live-dot, .adp-box,
+  #kokue-nav-right, #kokue-warning, .filter-group, .adp-box,
   input[type=range], button { display:none !important; }
   .layout { display:block !important; grid-template-columns:1fr !important; }
-  .kpi-strip, .kpi-grid { grid-template-columns:repeat(4,1fr) !important; }
-  .chart-row { grid-template-columns:1fr 1fr !important; }
   body { background:white !important; color:black !important; font-size:11px; }
+  .kpi-strip { grid-template-columns:repeat(4,1fr) !important; }
+  .chart-row { grid-template-columns:1fr 1fr !important; }
   .table-card { page-break-inside:avoid; }
 }
 </style>
+<script src="login.js"></script>
 </head>
 <body>
 
