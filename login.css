@@ -1,0 +1,135 @@
+/* KOKUE TUJA — Login & Auth Styles */
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=DM+Mono:wght@400;500&family=Barlow:wght@400;600&display=swap');
+
+#kokue-login-overlay {
+  position: fixed;
+  inset: 0;
+  background: #2a1f14;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  font-family: 'Barlow', 'Segoe UI', sans-serif;
+  transition: opacity 0.3s;
+}
+.kokue-login-card {
+  background: #faf6f0;
+  border-radius: 10px;
+  width: 360px;
+  max-width: 94vw;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  animation: kokue-slide-up 0.35s ease;
+}
+@keyframes kokue-slide-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.kokue-login-logo {
+  background: linear-gradient(135deg, #3d2410 0%, #5a3520 100%);
+  padding: 2rem 2rem 1.75rem;
+  text-align: center;
+}
+.kokue-login-brand {
+  font-family: 'Libre Baskerville', Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #f5e8d8;
+  letter-spacing: 0.02em;
+}
+.kokue-login-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(245,232,216,0.5);
+  margin-top: 5px;
+}
+.kokue-login-form {
+  padding: 1.75rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.kokue-login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.kokue-login-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a0897a;
+  font-weight: 500;
+}
+.kokue-login-input {
+  border: 1.5px solid #d9c9b8;
+  border-radius: 6px;
+  padding: 11px 13px;
+  font-size: 14px;
+  font-family: 'Barlow', sans-serif;
+  color: #2a1f14;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.kokue-login-input:focus {
+  border-color: #7a4f2e;
+  box-shadow: 0 0 0 3px rgba(122,79,46,0.12);
+}
+.kokue-login-error {
+  background: #fad7d4;
+  color: #8b1a14;
+  border-radius: 5px;
+  padding: 9px 13px;
+  font-size: 12px;
+  text-align: center;
+  font-weight: 500;
+}
+.kokue-login-btn {
+  background: #3d2410;
+  color: #f5e8d8;
+  border: none;
+  border-radius: 6px;
+  padding: 13px;
+  font-size: 14px;
+  font-family: 'Barlow', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: background 0.15s, transform 0.1s;
+  margin-top: 4px;
+}
+.kokue-login-btn:hover:not(:disabled) { background: #7a4f2e; transform: translateY(-1px); }
+.kokue-login-btn:active:not(:disabled) { transform: translateY(0); }
+.kokue-login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.kokue-login-footer {
+  text-align: center;
+  padding: 1rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #a0897a;
+  border-top: 1px solid #f0e8dc;
+}
+
+/* Print styles */
+@media print {
+  #kokue-login-overlay,
+  #kokue-warning,
+  #kokue-mobile-toggle,
+  #kokue-mobile-overlay,
+  #kokue-logout-btn,
+  #kokue-print-btn,
+  #kokue-global-nav,
+  .sidebar,
+  .tabs,
+  .btn-toggle,
+  .btn-reload { display: none !important; }
+  .layout { grid-template-columns: 1fr !important; }
+  .chart-row, .evol-grid { grid-template-columns: 1fr 1fr !important; }
+  .kpi-strip { grid-template-columns: repeat(4,1fr) !important; }
+  body { background: white !important; }
+}
