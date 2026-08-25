@@ -226,29 +226,27 @@ footer .note{background:#fff8e9;border:1px solid #eaddb0;border-radius:10px;padd
 
 </style>
 
+
+<script src="login.js"></script>
 <style id="kokue-auth-styles">
-/* Hide original static nav-links (replaced by login.js dynamic nav) */
+/* Hide original static nav-links - replaced by login.js dynamic nav */
 .nav-links { display:none !important; }
-/* But keep our injected global nav visible */
 #kokue-global-nav { display:flex !important; }
-/* Session bar spacing */
 body { padding-top: 2px; }
-/* Print styles */
 @media print {
-  nav.nav, .topbar, .sidebar, .tabs, .btn-toggle, .btn-reload,
+  nav, nav.nav, .topbar, .sidebar, .tabs, .btn-toggle, .btn-reload,
   #kokue-global-nav, #kokue-logout-btn, #kokue-print-btn,
   #kokue-user-label, #kokue-session-bar-wrap, #kokue-mobile-toggle,
-  #kokue-warning, .filter-group, .chart-mode-btn,
-  input[type=range], .adp-box, button:not(.kokue-print-safe) { display:none !important; }
-  .layout, body { display:block !important; grid-template-columns:1fr !important; }
+  #kokue-nav-right, #kokue-warning, .filter-group, .chart-mode-btn,
+  .nav-brand, .nav-links, .live-badge, .live-dot, .adp-box,
+  input[type=range], button { display:none !important; }
+  .layout { display:block !important; grid-template-columns:1fr !important; }
   .kpi-strip, .kpi-grid { grid-template-columns:repeat(4,1fr) !important; }
   .chart-row { grid-template-columns:1fr 1fr !important; }
   body { background:white !important; color:black !important; font-size:11px; }
-  thead tr { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   .table-card { page-break-inside:avoid; }
 }
 </style>
-<script src="login.js"></script>
 </head>
 <body>
 <nav class="nav">
