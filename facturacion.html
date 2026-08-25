@@ -179,7 +179,9 @@ tfoot td:first-child,tfoot td:nth-child(2){text-align:left;}
 </style>
 
 <style id="kokue-auth-styles">
-/* Hide original static nav-links (replaced by login.js dynamic nav) */
+/* Facturacion: hide outer nav.nav - uses internal topbar */
+nav.nav { display:none !important; }
+/* Hide original static nav-links */
 .nav-links { display:none !important; }
 /* But keep our injected global nav visible */
 #kokue-global-nav { display:flex !important; }
@@ -187,11 +189,18 @@ tfoot td:first-child,tfoot td:nth-child(2){text-align:left;}
 body { padding-top: 2px; }
 /* Print styles */
 @media print {
-  nav.nav, .topbar, .sidebar, .tabs, .btn-toggle, .btn-reload,
+  nav, nav.nav, .topbar, .sidebar, .tabs, .btn-toggle, .btn-reload,
   #kokue-global-nav, #kokue-logout-btn, #kokue-print-btn,
   #kokue-user-label, #kokue-session-bar-wrap, #kokue-mobile-toggle,
-  #kokue-warning, .filter-group, .chart-mode-btn,
-  input[type=range], .adp-box, button:not(.kokue-print-safe) { display:none !important; }
+  #kokue-nav-right, #kokue-warning, .filter-group, .chart-mode-btn,
+  .nav-brand, .nav-links, .live-badge, .live-dot, .adp-box,
+  input[type=range], button { display:none !important; }
+  .layout, body { display:block !important; grid-template-columns:1fr !important; }
+  body { background:white !important; color:black !important; font-size:11px; }
+  .kpi-strip, .kpi-grid { grid-template-columns:repeat(4,1fr) !important; }
+  .chart-row { grid-template-columns:1fr 1fr !important; }
+  .table-card { page-break-inside:avoid; }
+}
   .layout, body { display:block !important; grid-template-columns:1fr !important; }
   .kpi-strip, .kpi-grid { grid-template-columns:repeat(4,1fr) !important; }
   .chart-row { grid-template-columns:1fr 1fr !important; }
@@ -215,7 +224,7 @@ body { padding-top: 2px; }
     <a class="nav-link" href="maiz.html">Maíz</a>
     <a class="nav-link" href="creditos.html">Créditos</a>
   </div>
-  <div id="kokue-nav-right" class="nav-right">
+  <div class="nav-right">
     <div class="live-badge"><div class="live-dot"></div>LIVE</div>
   </div>
 </nav>
