@@ -116,7 +116,7 @@
 
   // ---- INJECT GLOBAL NAV ----
   function injectGlobalNav(){
-    // Remove existing duplicated nav-links injected by login before
+    // Always remove and re-inject to avoid duplicates
     document.getElementById('kokue-global-nav')?.remove();
 
     const current = detectModule();
@@ -374,8 +374,12 @@
 
   // ---- INIT ----
   function init(){
-    if(isAuth()){ onAuthenticated(); }
-    else { showLogin(); }
+    if(isAuth()){
+      // Always run onAuthenticated to inject nav/buttons on every page load
+      onAuthenticated();
+    } else {
+      showLogin();
+    }
   }
 
   if(document.readyState==='loading'){
