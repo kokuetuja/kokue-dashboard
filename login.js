@@ -332,13 +332,9 @@
       setTimeout(()=>{
         if(u===CONFIG.user&&p===CONFIG.pass){
           saveSession();
-          // Redirect to index on login
-          const currentPage = window.location.pathname.split('/').pop();
-          if(currentPage !== 'index.html' && currentPage !== '') {
-            window.location.href = 'index.html';
-          } else {
-            onSuccess();
-          }
+          // Always redirect to index on login
+          const basePath = window.location.pathname.replace(/[^/]*$/, '');
+          window.location.replace(basePath + 'index.html');
         } else {
           err.style.display='block';err.textContent='Usuario o contraseña incorrectos';
           document.getElementById('kl-pass').value='';
