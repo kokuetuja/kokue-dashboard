@@ -437,7 +437,7 @@ const LINE_COLORS=['#7a4f2e','#1a6b8a','#c8941e','#2e7d4f','#8b1a6b','#4a3d8b','
 let RAW=[], selMes, selEmp, currentTab='resumen', charts={}, sortState={};
 
 const fmt = v=>Math.round(v).toLocaleString('es-AR');
-const fmtM = v=>v>=1e9?'$'+(v/1e9).toFixed(2)+'B':'$'+(v/1e6).toFixed(1)+'M';
+const fmtM = v=>'$'+Math.round(v).toLocaleString('es-AR');
 
 function parseNum(s){
   if(!s||s.trim()===''||s.trim()==='$'||s.trim()==='-') return 0;
