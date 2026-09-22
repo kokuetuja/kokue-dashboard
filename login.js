@@ -109,7 +109,7 @@
 
   // ---- DETECT CURRENT MODULE ----
   function detectModule(){
-    const map = {'':'inicio','index':'inicio','facturacion':'facturacion','hacienda':'hacienda','stock':'stock','maiz':'maiz','creditos':'creditos','sueldos':'sueldos'};
+    const map = {'':'inicio','index':'inicio','facturacion':'facturacion','hacienda':'hacienda','stock':'stock','maiz':'maiz','creditos':'creditos','sueldos':'sueldos','posicion':'posicion'};
     const page = window.location.pathname.split('/').pop().replace('.html','').toLowerCase();
     return map[page] || page;
   }
@@ -128,6 +128,7 @@
       {id:'maiz',        label:'Maíz',          href:'maiz.html'},
       {id:'creditos',    label:'Créditos',      href:'creditos.html'},
       {id:'sueldos',     label:'Sueldos',       href:'sueldos.html'},
+      {id:'posicion',    label:'Posición',      href:'posicion.html'},
     ];
 
     const nav = document.createElement('div');

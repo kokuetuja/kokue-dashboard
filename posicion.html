@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kokue Tuja — Posición Financiera</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f3f4f2; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#7a7975; --line:#e4e3de; --grid:#ecebe7;
+  --head:#16324f; --head-ink:#fff; --chip:#eef0ec; --chip-on:#16324f; --chip-on-ink:#fff;
+  --in:#2a78d6; --out:#e34948; --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --neutral:#8a8983;
+  --neg:#c23b3a; --pos:#1d7a4f; --warn-bg:#fdf0ef; --warn-bd:#f2cdca; --ok-bg:#eaf6ef; --ok-bd:#c5e6d2;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#121211; --surface:#1a1a19; --ink:#fff; --ink2:#c3c2b7; --muted:#9b9a92; --line:#2e2e2b; --grid:#262624;
+    --head:#0e2238; --chip:#262624; --chip-on:#3987e5; --chip-on-ink:#fff;
+    --in:#3987e5; --out:#e66767; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --neutral:#77766f;
+    --neg:#ff8a85; --pos:#5fd09a; --warn-bg:#2f1d1c; --warn-bd:#5a2d2a; --ok-bg:#15291f; --ok-bd:#24503a;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#121211; --surface:#1a1a19; --ink:#fff; --ink2:#c3c2b7; --muted:#9b9a92; --line:#2e2e2b; --grid:#262624;
+  --head:#0e2238; --chip:#262624; --chip-on:#3987e5; --chip-on-ink:#fff;
+  --in:#3987e5; --out:#e66767; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --neutral:#77766f;
+  --neg:#ff8a85; --pos:#5fd09a; --warn-bg:#2f1d1c; --warn-bd:#5a2d2a; --ok-bg:#15291f; --ok-bd:#24503a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:14px}
+header{background:var(--head);color:var(--head-ink);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-size:19px;font-weight:600}
+header .sub{opacity:.75;font-size:12.5px;margin-top:3px}
+.hbtns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:8px 12px;font:500 13px Inter,sans-serif;cursor:pointer}
+.btn:hover{background:rgba(255,255,255,.2)}
+main{padding:18px 24px 30px;max-width:1440px;margin:0 auto}
+.filters{position:sticky;top:52px;z-index:5;background:var(--bg);padding:10px 0 12px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;border-bottom:1px solid var(--line);margin-bottom:14px}
+.f label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+select{font:500 13px Inter,sans-serif;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:130px}
+.seg{display:flex;background:var(--chip);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;color:var(--ink2);font:500 12.5px Inter,sans-serif;padding:6px 11px;border-radius:7px;cursor:pointer}
+.seg button.on{background:var(--chip-on);color:var(--chip-on-ink)}
+.quick button{font-size:12px}
+.grid{display:grid;gap:14px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 17px;min-width:0}
+.kpi .l{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.kpi .v{font-size:23px;font-weight:700;margin-top:6px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.kpi .n{font-size:12px;color:var(--muted);margin-top:4px}
+.neg{color:var(--neg)} .pos{color:var(--pos)}
+h2{font-size:14.5px;margin:0 0 3px;font-weight:600}
+.hint{font-size:12px;color:var(--muted);margin:0 0 12px}
+.r2{grid-template-columns:3fr 2fr;margin-top:14px}
+.r2b{grid-template-columns:2fr 3fr;margin-top:14px}
+@media(max-width:960px){.r2,.r2b{grid-template-columns:1fr} main{padding:14px 16px} header{padding:14px 16px}}
+.cb{position:relative;height:290px}
+.alerts{display:flex;flex-direction:column;gap:7px;margin-top:14px}
+.al{border-radius:8px;padding:9px 13px;font-size:13px;background:var(--warn-bg);border:1px solid var(--warn-bd)}
+.al.ok{background:var(--ok-bg);border-color:var(--ok-bd)}
+.al.info{background:var(--chip);border-color:var(--line)}
+.cat{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:6px 8px;border-radius:7px;cursor:pointer}
+.cat:hover,.cat.sel{background:var(--chip)}
+.cat .nm{font-size:12.5px}
+.cat .am{font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.cat .tr{grid-column:1/3;height:7px;background:var(--grid);border-radius:4px;overflow:hidden}
+.cat .br{height:100%;border-radius:0 4px 4px 0;background:var(--out)}
+.cat .br.in{background:var(--in)}
+.scroll{overflow:auto;max-height:520px}
+table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surface)}
+thead th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;background:var(--surface);position:sticky;top:0;z-index:2}
+thead th:first-child{z-index:3}
+tr.grp td{font-weight:700;background:var(--chip)}
+tr.grp td:first-child{background:var(--chip)}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--chip)}
+td.z{color:var(--muted)}
+.acctop{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}
+.stat{font-size:12px;color:var(--muted)} .stat b{display:block;font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums}
+#drop{display:none;position:fixed;inset:0;background:rgba(22,50,79,.85);color:#fff;z-index:50;align-items:center;justify-content:center;font-size:22px;font-weight:600}
+.foot{color:var(--muted);font-size:12px;margin-top:18px;text-align:center}
+#load{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:60}
+#load .t{font-size:18px;font-weight:600;color:var(--ink)}
+#load .s{font-size:13px;color:var(--muted)}
+#load .bar{width:240px;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+#load .bar i{display:block;height:100%;width:40%;background:var(--in);animation:ld 1.2s ease-in-out infinite}
+@keyframes ld{0%{margin-left:-40%}100%{margin-left:100%}}
+#load .err{display:none;max-width:460px;text-align:center;font-size:13px;line-height:1.6;background:var(--warn-bg);border:1px solid var(--warn-bd);border-radius:8px;padding:12px 16px}
+#load .err button{margin:10px 4px 0;background:var(--head);color:#fff;border:0;border-radius:6px;padding:7px 12px;font:500 12px Inter,sans-serif;cursor:pointer}
+/* Barra superior igual a los otros módulos */
+.nav{background:#3d2410;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:52px;position:sticky;top:0;z-index:200;gap:10px}
+.nav-brand{color:#f5e8d8;font-family:'Libre Baskerville',serif;font-size:13px;white-space:nowrap}
+.nav-links{display:none}
+.nav-right{display:flex;align-items:center;gap:8px}
+.live-badge{background:rgba(46,180,100,0.2);border:1px solid rgba(46,180,100,0.5);color:#4ade80;font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:3px;display:flex;align-items:center;gap:4px}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-reload{background:transparent;border:1px solid rgba(245,232,216,0.3);color:#f5e8d8;font-family:'DM Mono',monospace;font-size:9px;padding:4px 10px;border-radius:3px;cursor:pointer;letter-spacing:0.08em;white-space:nowrap}
+.btn-reload:hover{background:rgba(245,232,216,0.1)}
+@media(max-width:820px){.nav{height:auto;flex-wrap:wrap;justify-content:center;padding:8px 1rem}}
+.pagehead{padding:4px 0 10px}
+.pagehead h1{margin:0;font-size:19px;font-weight:600}
+.pagehead .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+</style>
+<script src="login.js"></script>
+<style id="kokue-auth-styles">
+#kokue-global-nav { display:flex !important; }
+body { padding-top: 2px; }
+@media print {
+  #kokue-global-nav, #kokue-logout-btn, #kokue-print-btn, #kokue-user-label, #kokue-session-bar-wrap,
+  #kokue-mobile-toggle, #kokue-warning, .nav, .filters, button { display:none !important; }
+  .scroll, #cats { max-height:none !important; overflow:visible !important; }
+}
+</style>
+</head>
+<body>
+<div id="drop">Soltá el CSV de POS. FIN. 2 M para actualizar</div>
+<div id="load"><div class="t">Kokue Tuja</div><div class="bar"><i></i></div><div class="s">Cargando posición financiera desde Google Sheets…</div><div class="err" id="loadErr"></div></div>
+<nav class="nav">
+  <div class="nav-brand">Kokue Tuja</div>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">Inicio</a>
+    <a class="nav-link active" href="posicion.html">Posición</a>
+  </div>
+  <div id="kokue-nav-right" class="nav-right">
+    <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+    <button class="btn-reload" id="bReload">↺ Actualizar</button>
+    <button class="btn-reload" id="bTheme">◐ Tema</button>
+    <input type="file" id="file" accept=".csv,text/csv" hidden>
+  </div>
+</nav>
+
+<main>
+  <div class="pagehead">
+    <h1>Posición Financiera · Kokue Tuja S.R.L.</h1>
+    <div class="sub" id="sub"></div>
+  </div>
+  <div class="filters">
+    <div class="f"><label>Desde</label><select id="fFrom"></select></div>
+    <div class="f"><label>Hasta</label><select id="fTo"></select></div>
+    <div class="f"><label>Rango rápido</label>
+      <div class="seg quick" id="fQuick">
+        <button data-n="2">2 sem</button><button data-n="4">4 sem</button><button data-n="8">8 sem</button><button data-n="0">Todo</button>
+      </div>
+    </div>
+    <div class="f"><label>Libro</label>
+      <div class="seg" id="fLedger">
+        <button data-l="BL">Blanco</button><button data-l="NN">NN</button><button data-l="PROY">Proyectado</button><button data-l="BL+PROY">BL + Proy.</button><button data-l="ALL">Todos</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="grid kpis" id="kpis"></section>
+  <section class="alerts" id="alerts"></section>
+
+  <section class="grid r2">
+    <div class="card">
+      <h2>Evolución del saldo</h2>
+      <p class="hint">Saldo acumulado al cierre de cada semana</p>
+      <div class="cb"><canvas id="cSaldo"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Cobros y pagos por semana</h2>
+      <p class="hint">Hacé clic en una barra para ver el detalle de esa semana</p>
+      <div class="cb"><canvas id="cFlujo"></canvas></div>
+    </div>
+  </section>
+
+  <section class="grid r2b">
+    <div class="card">
+      <h2 id="catTitle">Cuentas del período</h2>
+      <p class="hint">Clic en una cuenta para analizarla →</p>
+      <div class="seg" id="fSide" style="margin-bottom:10px;width:max-content"><button data-s="egr" class="on">Pagos</button><button data-s="ing">Cobros</button></div>
+      <div id="cats" style="max-height:470px;overflow:auto"></div>
+    </div>
+    <div class="card">
+      <div class="acctop">
+        <div class="f"><label>Cuenta</label><select id="fAcc" style="min-width:230px"></select></div>
+        <div class="stat">Total período<b id="aTot"></b></div>
+        <div class="stat">Promedio semanal<b id="aAvg"></b></div>
+        <div class="stat">% del total<b id="aPct"></b></div>
+      </div>
+      <p class="hint" id="aHint"></p>
+      <div class="cb"><canvas id="cAcc"></canvas></div>
+    </div>
+  </section>
+
+  <section class="grid r2" id="bankRow">
+    <div class="card">
+      <h2>Cheques emitidos pendientes por banco</h2>
+      <p class="hint">Valores en circulación que debitan cada semana (libro Blanco)</p>
+      <div class="cb"><canvas id="cBank"></canvas></div>
+    </div>
+    <div class="card">
+      <h2 id="wkTitle">Detalle de la semana</h2>
+      <p class="hint" id="wkHint"></p>
+      <div class="scroll" style="max-height:290px"><table id="wkTbl"></table></div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:14px">
+    <h2>Tabla completa</h2>
+    <p class="hint">Todas las cuentas del libro seleccionado en el rango · clic en una fila para analizarla</p>
+    <div class="scroll"><table id="tbl"></table></div>
+  </section>
+
+  <div class="foot" id="foot"></div>
+</main>
+
+<script>
+// ============================================================
+//  CONFIG — Planilla "POSICION FINANCIERA - KT v4", hoja POS. FIN. 2 M
+//  La planilla tiene que estar compartida "Cualquiera con el enlace (Lector)".
+// ============================================================
+const SHEET_ID  = '1sSmdQJcMhTLIiZ1ik0iouauFoDuddqh02KUCtNiPdDc';
+const SHEET_GID = '142221684';
+const URL_POS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
+
+/* ---------- Parser ---------- */
+function parseCSV(t){const R=[];let r=[],f="",q=false;for(let i=0;i<t.length;i++){const c=t[i];
+  if(q){if(c=='"'){if(t[i+1]=='"'){f+='"';i++}else q=false}else f+=c}
+  else if(c=='"')q=true;else if(c==','){r.push(f);f=""}else if(c=='\n'){r.push(f);R.push(r);r=[];f=""}else if(c!='\r')f+=c}
+  if(f||r.length){r.push(f);R.push(r)}return R}
+// Solo se toman las columnas hasta L inclusive (A=0 ... L=11)
+const ULTIMA_COLUMNA="L";const LAST_COL=ULTIMA_COLUMNA.charCodeAt(0)-65;
+const DATE_RE=/^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/;
+function money(s){if(s==null)return 0;s=String(s).trim();if(!s)return 0;if(s.includes("#"))return NaN;
+  if(!/[\d]/.test(s))return 0;if(/QQ|TN|USD/i.test(s))return 0;
+  const neg=s.includes("-");const n=parseFloat(s.replace(/[^\d,]/g,"").replace(",","."));return isNaN(n)?0:(neg?-n:n)}
+function tidy(n){n=n.replace(/\(NN\)/i,"").replace(/\s+/g," ").trim();
+  const map={"REPUESTOS Y REP":"Repuestos y reparaciones","MANTENIMIENTO DE INST":"Mantenimiento de instalaciones","PROD VETERINARIOS":"Productos veterinarios"};
+  if(map[n])return map[n];const s=n.toLowerCase().replace("maiz","maíz").replace("suplementacion","suplementación").replace("administracion","administración").replace("prestamos","préstamos").replace("capitalizacion","capitalización").replace("nacion","nación");
+  return s.charAt(0).toUpperCase()+s.slice(1)}
+
+function buildModel(text){
+  const rows=parseCSV(text);
+  const hi=rows.findIndex(r=>r.filter(c=>DATE_RE.test(c)).length>=5);
+  if(hi<0)throw new Error("No encontré la fila de fechas. ¿Es el CSV de la hoja POS. FIN. 2 M?");
+  const H=rows[hi];const cols=[],dates=[];
+  H.forEach((c,i)=>{const m=c.match(DATE_RE);if(m&&i<=LAST_COL){cols.push(i);dates.push(new Date(+m[3],m[2]-1,+m[1]))}});
+  let end=rows.findIndex((r,i)=>i>hi&&r.filter(c=>DATE_RE.test(c)).length>=5);if(end<0)end=rows.length;
+  const lines=[];let ledger=null,part=null;const extra={};
+  for(let i=hi+1;i<end;i++){const r=rows[i];const raw=(r[0]||"").trim();if(!raw)continue;const U=raw.toUpperCase();
+    const vals=cols.map(c=>money(r[c]));
+    let m;
+    if((m=U.match(/^SALDO INICIAL\s*-\s*(BL|NN|PROY)/))){ledger=m[1];part="pos";lines.push({ledger,part:"saldoIni",name:"Saldo inicial",vals});continue}
+    if(U.startsWith("SUBTOTAL")&&ledger){lines.push({ledger,part:"subtotal",name:"Subtotal",vals});ledger=null;part=null;continue}
+    if(ledger){
+      if(U.startsWith("COBROS")){part="ing";lines.push({ledger,part:"cobrosTot",name:"Cobros",vals});continue}
+      if(U.startsWith("CUENTAS POR PAGAR")){part="egr";lines.push({ledger,part:"pagosTot",name:"Pagos",vals});continue}
+      if(U.startsWith("INVERSIONES"))continue;
+      lines.push({ledger,part,name:part=="pos"?raw.replace(/\s*-\s*(BL|NN)$/i,"").replace(/\s+/g," ").trim():tidy(raw),vals,raw:U});continue}
+    extra[U]=vals;
+  }
+  // semanas válidas: subtotal BL numérico
+  const sub=lines.find(l=>l.ledger=="BL"&&l.part=="subtotal")||lines.find(l=>l.part=="subtotal");
+  const valid=dates.map((d,k)=>sub&&!isNaN(sub.vals[k]));
+  const nValid=valid.lastIndexOf(true)+1;
+  const bad=dates.length-nValid;
+  const keep=a=>a.slice(0,nValid).map(v=>isNaN(v)?0:v);
+  lines.forEach(l=>l.vals=keep(l.vals));
+  for(const k in extra)extra[k]=keep(extra[k]);
+  return {dates:dates.slice(0,nValid),lines,extra,badWeeks:bad,firstBad:bad?dates[nValid]:null};
+}
+
+/* ---------- Estado ---------- */
+let M, S={from:0,to:0,ledger:"BL",side:"egr",acc:null,week:0};
+const LEDGERS={"BL":["BL"],"NN":["NN"],"PROY":["PROY"],"BL+PROY":["BL","PROY"],"ALL":["BL","NN","PROY"]};
+const LNAME={BL:"Blanco",NN:"NN",PROY:"Proyectado"};
+const fmtD=d=>d.getDate()+"/"+(d.getMonth()+1);
+const fmtDL=d=>d.getDate()+"/"+(d.getMonth()+1)+"/"+d.getFullYear();
+const full=n=>(n<0?"-":"")+"$ "+Math.abs(Math.round(n)).toLocaleString("es-AR");
+const mill=n=>{const a=Math.abs(n);const s=a>=1e6?(a/1e6).toLocaleString("es-AR",{maximumFractionDigits:1})+" M":Math.round(a).toLocaleString("es-AR");return (n<0?"-":"")+"$ "+s};
+const sgn=n=>n<0?"neg":n>0?"pos":"";
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+function ledgersSel(){return LEDGERS[S.ledger]}
+function range(a){return a.slice(S.from,S.to+1)}
+function agg(part,name){ // suma de libros seleccionados
+  const L=ledgersSel();const out=new Array(M.dates.length).fill(0);
+  M.lines.filter(l=>L.includes(l.ledger)&&l.part==part&&(name==null||l.name==name)).forEach(l=>l.vals.forEach((v,i)=>out[i]+=v));
+  return out}
+function accounts(){ // cuentas únicas de libros seleccionados
+  const L=ledgersSel();const map=new Map();
+  M.lines.filter(l=>L.includes(l.ledger)&&(l.part=="ing"||l.part=="egr")).forEach(l=>{
+    const k=l.part+"|"+l.name;if(!map.has(k))map.set(k,{part:l.part,name:l.name,vals:new Array(M.dates.length).fill(0),by:{}});
+    const a=map.get(k);l.vals.forEach((v,i)=>a.vals[i]+=v);a.by[l.ledger]=l.vals});
+  return [...map.values()]}
+
+/* ---------- Charts ---------- */
+const charts={};
+function mk(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);return charts[id]}
+function baseOpts(extra={}){
+  const g=css("--grid"),m=css("--muted");
+  return Object.assign({maintainAspectRatio:false,animation:{duration:250},interaction:{mode:"index",intersect:false},
+    scales:{y:{grid:{color:g},border:{display:false},ticks:{color:m,callback:v=>mill(v).replace("$ ","")}},x:{grid:{display:false},ticks:{color:m}}},
+    plugins:{legend:{position:"bottom",labels:{color:css("--ink2"),boxWidth:12,boxHeight:12,useBorderRadius:true,borderRadius:3}},
+      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${full(c.raw)}`}}}},extra)}
+
+/* ---------- Render ---------- */
+function render(){
+  const W=range(M.dates).map(fmtD);
+  const L=ledgersSel();
+  const saldo=agg("subtotal"),cob=agg("cobrosTot"),pag=agg("pagosTot");
+  const ini=saldo[S.from]-cob[S.from]-pag[S.from];
+  const rC=sum(range(cob)),rP=sum(range(pag)),fin=saldo[S.to];
+  const rs=range(saldo);const minV=Math.min(...rs),minI=rs.indexOf(minV);
+  document.getElementById("sub").textContent=`Semanas del ${fmtDL(M.dates[S.from])} al ${fmtDL(M.dates[S.to])} · Libro: ${L.map(x=>LNAME[x]).join(" + ")}`;
+
+  const K=[["Saldo al inicio",ini,"Antes de los movimientos del "+fmtD(M.dates[S.from])],
+    ["Cobros del período",rC,W.length+" semanas"],["Pagos del período",rP,"Cuentas por pagar"],
+    ["Saldo al cierre",fin,"Semana del "+fmtD(M.dates[S.to])],["Peor semana",minV,"Semana del "+W[minI]]];
+  const bancos=M.lines.find(l=>l.ledger=="BL"&&/^BANCOS$/i.test(l.name));
+  let kh=K.map(([l,v,n])=>`<div class="card kpi"><div class="l">${l}</div><div class="v ${sgn(v)}">${mill(v)}</div><div class="n">${n}</div></div>`).join("");
+  const st=M.extra["STOCK ANIMALES (REAL)"];
+  if(st)kh+=`<div class="card kpi"><div class="l">Stock de animales</div><div class="v">${(st[S.to]||0).toLocaleString("es-AR")}</div><div class="n">Cabezas · semana del ${fmtD(M.dates[S.to])}</div></div>`;
+  document.getElementById("kpis").innerHTML=kh;
+
+  // alertas
+  const A=[];
+  range(pag).forEach((p,i)=>{const c=range(cob)[i];if(p+c< -300e6)A.push(`<div class="al">⚠ Semana del <b>${W[i]}</b>: pagos por <b>${full(p)}</b> contra cobros por ${full(c)}.</div>`)});
+  const posW=rs.map((v,i)=>v>0?W[i]:null).filter(Boolean);
+  if(posW.length)A.push(`<div class="al ok">✓ Saldo positivo en: <b>${posW.join(", ")}</b>.</div>`);
+  else A.push(`<div class="al">⚠ El saldo es negativo en todas las semanas del período.</div>`);
+  if(M.badWeeks)A.push(`<div class="al info">ℹ La semana del ${fmtDL(M.firstBad)} tiene <b>#ERROR!</b> en la hoja y no se muestra.</div>`);
+  document.getElementById("alerts").innerHTML=A.join("");
+
+  // saldo
+  const ds=[];const pal=[css("--s1"),css("--s2"),css("--s3")];
+  if(L.length>1){ds.push({label:"Total "+L.map(x=>LNAME[x]).join(" + "),data:rs,borderColor:css("--ink"),borderWidth:2.5,pointRadius:3,tension:.25});
+    L.forEach((x,i)=>{const v=M.lines.find(l=>l.ledger==x&&l.part=="subtotal").vals;ds.push({label:LNAME[x],data:range(v),borderColor:pal[["BL","NN","PROY"].indexOf(x)],borderWidth:2,borderDash:[5,4],pointRadius:0,tension:.25})})}
+  else ds.push({label:"Saldo "+LNAME[L[0]],data:rs,borderColor:pal[["BL","NN","PROY"].indexOf(L[0])],backgroundColor:"transparent",borderWidth:2.5,pointRadius:4,pointHoverRadius:6,tension:.25});
+  const zero={id:"z",afterDraw(c){const y=c.scales.y.getPixelForValue(0);if(y<c.chartArea.top||y>c.chartArea.bottom)return;const x=c.ctx;x.save();x.strokeStyle=css("--neutral");x.lineWidth=1;x.beginPath();x.moveTo(c.chartArea.left,y);x.lineTo(c.chartArea.right,y);x.stroke();x.restore()}};
+  mk("cSaldo",{type:"line",data:{labels:W,datasets:ds},options:baseOpts({plugins:{...baseOpts().plugins,legend:{display:ds.length>1,position:"bottom",labels:{color:css("--ink2"),boxWidth:12}}}}),plugins:[zero]});
+
+  // flujo
+  mk("cFlujo",{type:"bar",data:{labels:W,datasets:[
+    {label:"Cobros",data:range(cob),backgroundColor:css("--in"),borderRadius:4,borderSkipped:false,maxBarThickness:26},
+    {label:"Pagos",data:range(pag),backgroundColor:css("--out"),borderRadius:4,borderSkipped:false,maxBarThickness:26}]},
+    options:{...baseOpts(),onClick:(e,els)=>{if(els.length){S.week=S.from+els[0].index;renderWeek()}}},plugins:[zero]});
+
+  renderCats();renderAcc();renderBank();renderWeek();renderTable();
+}
+
+function renderCats(){
+  const acc=accounts().filter(a=>a.part==S.side).map(a=>({...a,t:sum(range(a.vals))})).filter(a=>a.t!==0).sort((a,b)=>Math.abs(b.t)-Math.abs(a.t));
+  const mx=Math.max(1,...acc.map(a=>Math.abs(a.t)));
+  document.getElementById("catTitle").textContent=(S.side=="egr"?"Pagos":"Cobros")+" por cuenta en el período";
+  document.getElementById("cats").innerHTML=acc.length?acc.map(a=>`<div class="cat ${S.acc==a.part+"|"+a.name?"sel":""}" data-k="${a.part}|${a.name}">
+    <span class="nm">${a.name}</span><span class="am ${sgn(a.t)}">${mill(a.t)}</span>
+    <div class="tr"><div class="br ${a.part=="ing"?"in":""}" style="width:${(Math.abs(a.t)/mx*100).toFixed(1)}%"></div></div></div>`).join("")
+    :`<p class="hint">Sin movimientos en este período.</p>`;
+  document.querySelectorAll(".cat").forEach(e=>e.onclick=()=>{S.acc=e.dataset.k;fillAccSel();renderCats();renderAcc()});
+}
+
+function fillAccSel(){
+  const acc=accounts();const sel=document.getElementById("fAcc");
+  const grp=p=>acc.filter(a=>a.part==p).map(a=>`<option value="${p}|${a.name}" ${S.acc==p+"|"+a.name?"selected":""}>${a.name}</option>`).join("");
+  sel.innerHTML=`<optgroup label="Pagos">${grp("egr")}</optgroup><optgroup label="Cobros">${grp("ing")}</optgroup>`;
+  if(!acc.some(a=>a.part+"|"+a.name==S.acc)){const top=acc.filter(a=>a.part=="egr").sort((a,b)=>sum(range(a.vals))-sum(range(b.vals)))[0];S.acc=top?top.part+"|"+top.name:null;if(S.acc)sel.value=S.acc}
+}
+
+function renderAcc(){
+  const acc=accounts().find(a=>a.part+"|"+a.name==S.acc);const W=range(M.dates).map(fmtD);
+  if(!acc){mk("cAcc",{type:"bar",data:{labels:W,datasets:[]},options:baseOpts()});return}
+  const t=sum(range(acc.vals));const tot=acc.part=="egr"?sum(range(agg("pagosTot"))):sum(range(agg("cobrosTot")));
+  document.getElementById("aTot").innerHTML=`<span class="${sgn(t)}">${full(t)}</span>`;
+  document.getElementById("aAvg").textContent=mill(t/W.length);
+  document.getElementById("aPct").textContent=tot?(t/tot*100).toLocaleString("es-AR",{maximumFractionDigits:1})+" %":"–";
+  let Ls=Object.keys(acc.by).filter(x=>range(acc.by[x]).some(v=>v));if(!Ls.length)Ls=Object.keys(acc.by).slice(0,1);const pal={BL:css("--s1"),NN:css("--s2"),PROY:css("--s3")};
+  document.getElementById("aHint").textContent=Ls.length>1?"Apilado por libro: "+Ls.map(x=>LNAME[x]).join(", "):"Libro: "+LNAME[Ls[0]];
+  mk("cAcc",{type:"bar",data:{labels:W,datasets:Ls.map(x=>({label:LNAME[x],data:range(acc.by[x]),backgroundColor:Ls.length>1?pal[x]:(acc.part=="egr"?css("--out"):css("--in")),borderRadius:4,borderSkipped:false,maxBarThickness:34,borderColor:css("--surface"),borderWidth:Ls.length>1?{top:2}:0}))},
+    options:baseOpts({scales:{...baseOpts().scales,x:{...baseOpts().scales.x,stacked:true},y:{...baseOpts().scales.y,stacked:true}},plugins:{...baseOpts().plugins,legend:{display:Ls.length>1,position:"bottom",labels:{color:css("--ink2"),boxWidth:12}}}})});
+}
+
+function renderBank(){
+  const banks=M.lines.filter(l=>l.ledger=="BL"&&/^VALORES EN CIRCULACION\s+\S/i.test(l.name));
+  const W=range(M.dates).map(fmtD);const pal=[css("--s1"),css("--s2"),css("--s3")];
+  mk("cBank",{type:"bar",data:{labels:W,datasets:banks.map((b,i)=>({label:tidy(b.name.replace(/VALORES EN CIRCULACION\s+/i,"")),data:range(b.vals),backgroundColor:pal[i%3],borderColor:css("--surface"),borderWidth:{bottom:2},borderSkipped:false,borderRadius:3,maxBarThickness:30}))},
+    options:baseOpts({scales:{...baseOpts().scales,x:{...baseOpts().scales.x,stacked:true},y:{...baseOpts().scales.y,stacked:true}}})});
+}
+
+function renderWeek(){
+  if(S.week<S.from||S.week>S.to)S.week=S.from;
+  const i=S.week;const acc=accounts().map(a=>({...a,v:a.vals[i]})).filter(a=>a.v!==0).sort((a,b)=>a.v-b.v);
+  document.getElementById("wkTitle").textContent="Detalle de la semana del "+fmtDL(M.dates[i]);
+  const c=agg("cobrosTot")[i],p=agg("pagosTot")[i];
+  document.getElementById("wkHint").innerHTML=`Cobros <b class="pos">${full(c)}</b> · Pagos <b class="neg">${full(p)}</b> · Neto <b class="${sgn(c+p)}">${full(c+p)}</b>`;
+  document.getElementById("wkTbl").innerHTML=`<thead><tr><th>Cuenta</th><th>Tipo</th><th>Monto</th></tr></thead><tbody>`+
+    (acc.length?acc.map(a=>`<tr class="click" data-k="${a.part}|${a.name}"><td>${a.name}</td><td class="z">${a.part=="egr"?"Pago":"Cobro"}</td><td class="${sgn(a.v)}">${full(a.v)}</td></tr>`).join(""):`<tr><td colspan="3" class="z">Sin movimientos</td></tr>`)+"</tbody>";
+  bindRows("#wkTbl");
+}
+
+function renderTable(){
+  const W=range(M.dates).map(fmtD);const L=ledgersSel();
+  const row=(n,v,cls="",k="")=>`<tr class="${cls}" ${k?`data-k="${k}"`:""}><td>${n}</td>${range(v).map(x=>`<td class="${x===0?"z":sgn(x)}">${x===0?"–":mill(x)}</td>`).join("")}<td class="${sgn(sum(range(v)))}"><b>${mill(sum(range(v)))}</b></td></tr>`;
+  let h=`<thead><tr><th>Concepto</th>${W.map(w=>`<th>${w}</th>`).join("")}<th>Total</th></tr></thead><tbody>`;
+  const acc=accounts();
+  h+=row("Cobros",agg("cobrosTot"),"grp");
+  acc.filter(a=>a.part=="ing"&&a.vals.some(v=>v)).forEach(a=>h+=row(a.name,a.vals,"click","ing|"+a.name));
+  h+=row("Pagos",agg("pagosTot"),"grp");
+  acc.filter(a=>a.part=="egr"&&a.vals.some(v=>v)).forEach(a=>h+=row(a.name,a.vals,"click","egr|"+a.name));
+  const sal=range(agg("subtotal"));
+  h+=`<tr class="grp"><td>Saldo al cierre</td>${sal.map(x=>`<td class="${sgn(x)}">${mill(x)}</td>`).join("")}<td></td></tr>`;
+  if(L.includes("BL")){h+=`<tr class="grp"><td>Posición bancaria (Blanco)</td>${W.map(()=>"<td></td>").join("")}<td></td></tr>`;
+    M.lines.filter(l=>l.ledger=="BL"&&l.part=="pos").forEach(l=>{if(l.vals.some(v=>v)){const isSum=/^VALORES EN CIRCULACION$|^POSICION/i.test(l.name);
+      h+=`<tr><td>${tidy(l.name)}</td>${range(l.vals).map(x=>`<td class="${x===0?"z":sgn(x)}">${x===0?"–":mill(x)}</td>`).join("")}<td class="z">${isSum?"":""}</td></tr>`}})}
+  document.getElementById("tbl").innerHTML=h+"</tbody>";
+  bindRows("#tbl");
+}
+function bindRows(sel){document.querySelectorAll(sel+" tr[data-k]").forEach(r=>r.onclick=()=>{S.acc=r.dataset.k;fillAccSel();renderCats();renderAcc();document.getElementById("fAcc").scrollIntoView({behavior:"smooth",block:"center"})})}
+
+/* ---------- Controles ---------- */
+function fillDates(){
+  const o=M.dates.map((d,i)=>`<option value="${i}">${fmtDL(d)}</option>`).join("");
+  fFrom.innerHTML=o;fTo.innerHTML=o;fFrom.value=S.from;fTo.value=S.to}
+function setOn(g,attr,val){document.querySelectorAll(`#${g} button`).forEach(b=>b.classList.toggle("on",b.dataset[attr]==val))}
+fFrom.onchange=()=>{S.from=+fFrom.value;if(S.from>S.to){S.to=S.from;fTo.value=S.to}setOn("fQuick","n","x");fillAccSel();render()};
+fTo.onchange=()=>{S.to=+fTo.value;if(S.to<S.from){S.from=S.to;fFrom.value=S.from}setOn("fQuick","n","x");fillAccSel();render()};
+document.querySelectorAll("#fQuick button").forEach(b=>b.onclick=()=>{const n=+b.dataset.n;S.from=0;S.to=n?Math.min(n,M.dates.length)-1:M.dates.length-1;fillDates();setOn("fQuick","n",b.dataset.n);fillAccSel();render()});
+document.querySelectorAll("#fLedger button").forEach(b=>b.onclick=()=>{S.ledger=b.dataset.l;setOn("fLedger","l",S.ledger);fillAccSel();render()});
+document.querySelectorAll("#fSide button").forEach(b=>b.onclick=()=>{S.side=b.dataset.s;setOn("fSide","s",S.side);renderCats()});
+fAcc.onchange=()=>{S.acc=fAcc.value;renderCats();renderAcc()};
+bTheme.onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme=="dark":matchMedia("(prefers-color-scheme: dark)").matches;r.dataset.theme=dark?"light":"dark";render()};
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>render());
+
+function load(text,name){
+  try{M=buildModel(text)}catch(e){alertBox(e.message);return false}
+  S.from=0;S.to=M.dates.length-1;S.week=0;S.acc=null;
+  fillDates();setOn("fQuick","n","0");setOn("fLedger","l",S.ledger);fillAccSel();render();
+  document.getElementById("foot").textContent=`Fuente: ${name} · ${M.dates.length} semanas con datos · Actualizado ${new Date().toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"})}`;
+  document.getElementById("load").style.display="none";return true;
+}
+function alertBox(msg){document.getElementById("alerts").insertAdjacentHTML("afterbegin",`<div class="al">✖ ${msg}</div>`)}
+function readFile(f){const r=new FileReader();r.onload=()=>load(r.result,f.name);r.readAsText(f,"utf-8")}
+bReload.onclick=()=>loadData();file.onchange=()=>file.files[0]&&readFile(file.files[0]);
+let dc=0;addEventListener("dragenter",e=>{e.preventDefault();dc++;drop.style.display="flex"});
+addEventListener("dragleave",()=>{if(--dc<=0){dc=0;drop.style.display="none"}});
+addEventListener("dragover",e=>e.preventDefault());
+addEventListener("drop",e=>{e.preventDefault();dc=0;drop.style.display="none";const f=e.dataTransfer.files[0];if(f)readFile(f)});
+
+Chart.defaults.font.family="Inter, system-ui, sans-serif";
+async function loadData(){
+  const ov=document.getElementById("load"),err=document.getElementById("loadErr");
+  ov.style.display="flex";err.style.display="none";
+  try{
+    const r=await fetch(URL_POS+"&_="+Date.now(),{redirect:"follow",cache:"no-store"});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const txt=await r.text();
+    try{M=buildModel(txt)}catch(e){throw e}
+    load(txt,"Google Sheets · POS. FIN. 2 M");
+  }catch(e){
+    console.error(e);err.style.display="block";
+    err.innerHTML=`No se pudieron cargar los datos del Sheets.<br>${e.message}<br>Verificá que la planilla esté compartida como "Cualquiera con el enlace (Lector)".<br><button onclick="loadData()">↺ Reintentar</button><button onclick="document.getElementById('file').click()">⬆ Cargar CSV a mano</button>`;
+  }
+}
+loadData();
+</script>
+</body>
+</html>
