@@ -214,12 +214,11 @@ body { padding-top: 2px; }
 
 <script>
 // ============================================================
-//  CONFIG — Planilla "POSICION FINANCIERA - KT v4", hoja POS. FIN. 2 M
-//  La planilla tiene que estar compartida "Cualquiera con el enlace (Lector)".
+//  CONFIG — hoja POS. FIN. 2 M "Publicada en la web" como CSV
+//  (Archivo > Compartir > Publicar en la web). Solo se expone esta hoja.
+//  Si algún día republicás la hoja, reemplazá esta URL.
 // ============================================================
-const SHEET_ID  = '1sSmdQJcMhTLIiZ1ik0iouauFoDuddqh02KUCtNiPdDc';
-const SHEET_GID = '142221684';
-const URL_POS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
+const URL_POS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRzIO3_WmKGjuhsl0GigbBuwAEDcmcASEogz4JR8Fq2AMC5L6dDLoS0lKsT9LV_Ui9XI6BbfXKqjyqh/pub?gid=142221684&single=true&output=csv';
 
 /* ---------- Parser ---------- */
 function parseCSV(t){const R=[];let r=[],f="",q=false;for(let i=0;i<t.length;i++){const c=t[i];
@@ -457,7 +456,7 @@ async function loadData(){
     load(txt,"Google Sheets · POS. FIN. 2 M");
   }catch(e){
     console.error(e);err.style.display="block";
-    err.innerHTML=`No se pudieron cargar los datos del Sheets.<br>${e.message}<br>Verificá que la planilla esté compartida como "Cualquiera con el enlace (Lector)".<br><button onclick="loadData()">↺ Reintentar</button><button onclick="document.getElementById('file').click()">⬆ Cargar CSV a mano</button>`;
+    err.innerHTML=`No se pudieron cargar los datos del Sheets.<br>${e.message}<br>Verificá que la hoja POS. FIN. 2 M siga publicada en la web (Archivo → Compartir → Publicar en la web).<br><button onclick="loadData()">↺ Reintentar</button><button onclick="document.getElementById('file').click()">⬆ Cargar CSV a mano</button>`;
   }
 }
 loadData();
