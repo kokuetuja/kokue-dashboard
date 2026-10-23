@@ -194,9 +194,10 @@ body { padding-top: 2px; }
       <h2>Calce de cobros y pagos</h2>
       <div class="chips" id="selChips"></div>
       <div class="acctop">
+        <div class="stat"><label style="cursor:pointer"><input type="checkbox" id="cDisp" checked style="vertical-align:-2px;margin:0 4px 0 0">Disponible al inicio</label><b id="aDisp"></b></div>
         <div class="stat">Cobros elegidos<b id="aCob"></b></div>
         <div class="stat">Pagos elegidos<b id="aPag"></b></div>
-        <div class="stat">Neto del período<b id="aNet"></b></div>
+        <div class="stat" id="aNetL">Sobrante<b id="aNet"></b></div>
         <div class="stat">Cobertura<b id="aCov"></b></div>
       </div>
       <p class="hint" id="aHint"></p>
@@ -282,7 +283,7 @@ function buildModel(text){
 }
 
 /* ---------- Estado ---------- */
-let M, S={from:0,to:0,ledger:"BL",side:"all",accs:[],col:{},week:0};
+let M, S={from:0,to:0,ledger:"BL",side:"all",accs:[],col:{},week:0,disp:true};
 const LEDGERS={"BL":["BL"],"NN":["NN"],"PROY":["PROY"],"BL+PROY":["BL","PROY"],"ALL":["BL","NN","PROY"]};
 const LNAME={BL:"Blanco",NN:"NN",PROY:"Proyectado"};
 const fmtD=d=>d.getDate()+"/"+(d.getMonth()+1);
@@ -396,26 +397,41 @@ function renderAcc(){
     :`<span class="hint" style="margin:0">Tildá cuentas en la lista de la izquierda.</span>`;
   document.querySelectorAll("#selChips .chip button").forEach(b=>b.onclick=()=>{removeAcc(b.dataset.k);renderCats();renderAcc()});
   const clr=document.getElementById("clrAcc");if(clr)clr.onclick=()=>{S.accs=[];S.col={};renderCats();renderAcc()};
-  const n=W.length;const net=new Array(n).fill(0);let tc=0,tp=0;
-  sel.forEach(({a})=>range(a.vals).forEach((v,i)=>{net[i]+=v;if(a.part=="ing")tc+=v;else tp+=v}));
-  let acc=0;const cum=net.map(v=>acc+=v);
-  document.getElementById("aCob").innerHTML=`<span class="${sgn(tc)}">${mill(tc)}</span>`;
-  document.getElementById("aPag").innerHTML=`<span class="${sgn(tp)}">${mill(tp)}</span>`;
-  document.getElementById("aNet").innerHTML=`<span class="${sgn(tc+tp)}">${mill(tc+tp)}</span>`;
-  document.getElementById("aCov").textContent=tp?Math.round(tc/Math.abs(tp)*100).toLocaleString("es-AR")+" %":"–";
+  // Disponible al inicio: Caja + Bancos + Cheques en cartera de los libros elegidos, en la primera semana del rango
+  const L=ledgersSel();
+  const dispIni=sum(M.lines.filter(l=>L.includes(l.ledger)&&l.part=="pos"&&/^(CAJA|BANCOS|CHEQUES EN CARTERA)$/i.test(l.name)).map(l=>l.vals[S.from]||0));
+  const disp=S.disp?dispIni:0;
+  const n=W.length;const cobW=new Array(n).fill(0),pagW=new Array(n).fill(0);
+  sel.forEach(({a})=>range(a.vals).forEach((v,i)=>{if(a.part=="ing")cobW[i]+=v;else pagW[i]+=Math.abs(v)}));
+  const tc=sum(cobW),tp=sum(pagW);
+  let ac=disp,ap=0;const cumC=cobW.map(v=>ac+=v),cumP=pagW.map(v=>ap+=v);const gap=cumC.map((c,i)=>c-cumP[i]);
+  document.getElementById("aDisp").innerHTML=`<span class="${S.disp?sgn(dispIni):""}" style="${S.disp?"":"opacity:.45"}">${mill(dispIni)}</span>`;
+  document.getElementById("aCob").innerHTML=`<span class="pos">${mill(tc)}</span>`;
+  document.getElementById("aPag").innerHTML=`<span class="neg">${mill(tp)}</span>`;
+  const fin=disp+tc-tp;
+  document.getElementById("aNetL").firstChild.textContent=fin<0?"Faltante":"Sobrante";
+  document.getElementById("aNet").innerHTML=`<span class="${sgn(fin)}">${mill(Math.abs(fin))}</span>`;
+  document.getElementById("aCov").textContent=tp?Math.round((disp+tc)/tp*100).toLocaleString("es-AR")+" %":"–";
   const hint=document.getElementById("aHint");
-  if(sel.length){const mn=Math.min(...cum),mi=cum.indexOf(mn);
-    hint.innerHTML=(mn<0?`Peor momento del neto acumulado: <b class="neg">${full(mn)}</b> en la semana del ${W[mi]}. `:`El neto acumulado nunca queda negativo en el período. `)+`Barras: arriba cobros, abajo pagos.`}
+  if(sel.length){const mn=Math.min(...gap),mi=gap.indexOf(mn);
+    hint.innerHTML=(mn<0?`<b class="neg">No alcanza:</b> el faltante máximo es <b class="neg">${full(-mn)}</b> en la semana del ${W[mi]}. `:`<b class="pos">Alcanza</b> en todas las semanas del período. `)
+      +`Barras: a la izquierda ${S.disp?"disponible + ":""}cobros, a la derecha pagos. Líneas: acumulados.`}
   else hint.textContent="";
-  const ds=sel.map(({k,a})=>({type:"bar",label:a.name+(a.part=="ing"?" (cobro)":" (pago)"),data:range(a.vals),stack:"s",
-    backgroundColor:colOf(k),borderColor:css("--surface"),borderWidth:1,borderRadius:3,borderSkipped:false,maxBarThickness:34,order:2}));
-  const both=sel.some(x=>x.a.part=="ing")&&sel.some(x=>x.a.part=="egr");
-  if(both)ds.push({type:"line",label:"Neto de la semana",data:net,stack:"n",showLine:false,borderColor:css("--ink"),backgroundColor:css("--surface"),borderWidth:2,pointRadius:5,pointHoverRadius:7,order:0});
-  if(sel.length)ds.push({type:"line",label:"Neto acumulado",data:cum,stack:"c",borderColor:css("--ink"),borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0,order:1});
+  const bar=(lbl,data,stack,color)=>({type:"bar",label:lbl,data,stack,backgroundColor:color,borderColor:css("--surface"),borderWidth:1,borderRadius:3,borderSkipped:false,maxBarThickness:26,order:2});
+  const ds=[];
+  if(S.disp&&dispIni)ds.push(bar("Disponible al inicio",W.map((_,i)=>i==0?dispIni:0),"cob",css("--neutral")));
+  sel.filter(x=>x.a.part=="ing").forEach(({k,a})=>ds.push(bar(a.name+" (cobro)",range(a.vals),"cob",colOf(k))));
+  sel.filter(x=>x.a.part=="egr").forEach(({k,a})=>ds.push(bar(a.name+" (pago)",range(a.vals).map(v=>Math.abs(v)),"pag",colOf(k))));
+  if(sel.length){
+    ds.push({type:"line",label:(S.disp?"Disponible + cobros":"Cobros")+" acumulados",data:cumC,stack:"lc",borderColor:css("--ink"),backgroundColor:css("--ink"),borderWidth:2,pointRadius:2,tension:0,order:1});
+    ds.push({type:"line",label:"Pagos acumulados",data:cumP,stack:"lp",borderColor:css("--ink"),backgroundColor:css("--surface"),borderDash:[6,4],borderWidth:2,pointRadius:2,tension:0,order:1});
+  }
   const o=baseOpts();
   mk("cAcc",{type:"bar",data:{labels:W,datasets:ds},
-    options:{...o,scales:{...o.scales,x:{...o.scales.x,stacked:true},y:{...o.scales.y,stacked:true}},plugins:{...o.plugins,legend:{display:true,position:"bottom",labels:{color:css("--ink2"),boxWidth:12}}}},
-    plugins:[{id:"z0",afterDraw(c){const y=c.scales.y.getPixelForValue(0);if(y<c.chartArea.top||y>c.chartArea.bottom)return;const x=c.ctx;x.save();x.strokeStyle=css("--neutral");x.lineWidth=1;x.beginPath();x.moveTo(c.chartArea.left,y);x.lineTo(c.chartArea.right,y);x.stroke();x.restore()}}]});
+    options:{...o,scales:{...o.scales,x:{...o.scales.x,stacked:true},y:{...o.scales.y,stacked:true,beginAtZero:true}},
+      plugins:{...o.plugins,legend:{display:true,position:"bottom",labels:{color:css("--ink2"),boxWidth:12}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${full(c.raw)}`,
+          footer:items=>{const i=items[0].dataIndex;const g=gap[i];return (g<0?"Faltante acumulado: ":"Sobrante acumulado: ")+full(Math.abs(g))}}}}}});
 }
 
 function renderBank(){
@@ -460,6 +476,7 @@ function fillDates(){
   const o=M.dates.map((d,i)=>`<option value="${i}">${fmtDL(d)}</option>`).join("");
   fFrom.innerHTML=o;fTo.innerHTML=o;fFrom.value=S.from;fTo.value=S.to}
 function setOn(g,attr,val){document.querySelectorAll(`#${g} button`).forEach(b=>b.classList.toggle("on",b.dataset[attr]==val))}
+document.getElementById("cDisp").onchange=e=>{S.disp=e.target.checked;renderAcc()};
 fFrom.onchange=()=>{S.from=+fFrom.value;if(S.from>S.to){S.to=S.from;fTo.value=S.to}setOn("fQuick","n","x");fillAccSel();render()};
 fTo.onchange=()=>{S.to=+fTo.value;if(S.to<S.from){S.from=S.to;fFrom.value=S.from}setOn("fQuick","n","x");fillAccSel();render()};
 document.querySelectorAll("#fQuick button").forEach(b=>b.onclick=()=>{const n=+b.dataset.n;S.from=0;S.to=n?Math.min(n,M.dates.length)-1:M.dates.length-1;fillDates();setOn("fQuick","n",b.dataset.n);fillAccSel();render()});
