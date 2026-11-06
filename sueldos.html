@@ -350,11 +350,12 @@ body { padding-top: 2px; }
             <th onclick="sortTable('tbl-emp',1)">Empleado</th>
             <th onclick="sortTable('tbl-emp',2)">Meses</th>
             <th onclick="sortTable('tbl-emp',3)">Días trab.</th>
-            <th onclick="sortTable('tbl-emp',4)">Sueldo/Guard.</th>
-            <th onclick="sortTable('tbl-emp',5)">Hs Extra/Viand.</th>
-            <th onclick="sortTable('tbl-emp',6)">Aguinaldo/Vac.</th>
-            <th onclick="sortTable('tbl-emp',7)">Total</th>
-            <th onclick="sortTable('tbl-emp',8)">Prom. mensual</th>
+            <th onclick="sortTable('tbl-emp',4)">Prom. días/mes</th>
+            <th onclick="sortTable('tbl-emp',5)">Sueldo/Guard.</th>
+            <th onclick="sortTable('tbl-emp',6)">Hs Extra/Viand.</th>
+            <th onclick="sortTable('tbl-emp',7)">Aguinaldo/Vac.</th>
+            <th onclick="sortTable('tbl-emp',8)">Total</th>
+            <th onclick="sortTable('tbl-emp',9)">Prom. mensual</th>
           </tr></thead>
           <tbody id="tbody-emp"></tbody>
           <tfoot id="tfoot-emp"></tfoot>
@@ -729,15 +730,18 @@ function renderEmpleados(data){
     g[r.emp].total+=r.total; g[r.emp].dias+=r.dias; g[r.emp].meses.add(r.mes);
   });
   const sorted=Object.entries(g).sort((a,b)=>b[1].total-a[1].total);
-  let html=''; let ts=0,te=0,ta=0,tt=0;
+  let html=''; let ts=0,te=0,ta=0,tt=0,td=0,tm=0;
   sorted.forEach(([emp,v],i)=>{
     ts+=v.sueldo; te+=v.extras; ta+=v.aguinaldo; tt+=v.total;
     const prom=v.meses.size>0?v.total/v.meses.size:0;
+    const promDias=v.meses.size>0?v.dias/v.meses.size:0;
+    td+=v.dias; tm+=v.meses.size;
     html+=`<tr onclick="openLegajo('${emp.replace(/'/g,"\\'")}')">
       <td>${String(i+1).padStart(2,'0')}</td>
       <td>${emp}</td>
       <td style="text-align:center">${v.meses.size}</td>
       <td>${v.dias.toFixed(1)}</td>
+      <td style="font-weight:600">${promDias.toFixed(1)}</td>
       <td>$${fmt(v.sueldo)}</td>
       <td>$${fmt(v.extras)}</td>
       <td>$${fmt(v.aguinaldo)}</td>
@@ -745,9 +749,10 @@ function renderEmpleados(data){
       <td>$${fmt(prom)}</td>
     </tr>`;
   });
-  document.getElementById('tbody-emp').innerHTML=html||'<tr><td colspan="9" class="no-data">Sin datos</td></tr>';
+  document.getElementById('tbody-emp').innerHTML=html||'<tr><td colspan="10" class="no-data">Sin datos</td></tr>';
   document.getElementById('tfoot-emp').innerHTML=`<tr>
     <td>—</td><td>TOTAL</td><td>—</td><td>—</td>
+    <td style="font-weight:600">${tm>0?(td/tm).toFixed(1):'—'}</td>
     <td>$${fmt(ts)}</td><td>$${fmt(te)}</td><td>$${fmt(ta)}</td>
     <td>$${fmt(tt)}</td><td>—</td>
   </tr>`;
