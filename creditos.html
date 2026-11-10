@@ -157,7 +157,7 @@ tbody tr:hover{background:#f7f9f5}
 .deuda-grid{grid-template-columns:1fr 1.25fr;align-items:start}
 tfoot td{font-weight:700;border-top:1.5px solid var(--line);background:#f7f9f5}
 @media(max-width:820px){.deuda-kpis{grid-template-columns:1fr}.deuda-grid{grid-template-columns:1fr}}
-.st.vig{color:var(--green)} .st.can{color:var(--ink-soft)} .st.fin{color:var(--nacion)}
+.st.vig{color:var(--green)} .st.can{color:var(--ink-soft)} .st.fin{color:var(--nacion)} .st.par{color:#a8761a}
 .est-flag{color:var(--gold);font-weight:700;cursor:help}
 th.chk,td.chk{width:32px;text-align:center;padding:8px 4px}
 input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--green)}
@@ -365,12 +365,7 @@ body { padding-top: 2px; }
     </div>
   </section>
 
-  <section class="grid" style="margin-bottom:18px">
-    <div class="panel">
-      <h2><span class="dot" style="background:var(--tierra)"></span>Devaluación · costo en dólares por cuota <span class="hint">cada punto es una cuota; muestra cómo el dólar licuó el costo real</span></h2>
-      <div class="chartwrap sm" style="height:300px"><canvas id="devalChart"></canvas></div>
-    </div>
-  </section>
+  
 
   <section class="grid two" style="margin-bottom:18px">
     <div class="panel">
@@ -396,6 +391,7 @@ body { padding-top: 2px; }
       <div class="cuotas-tools">
         <div class="fgroup"><label>Vencimiento desde</label><input type="date" id="cuotas-desde"></div>
         <div class="fgroup"><label>Vencimiento hasta</label><input type="date" id="cuotas-hasta"></div>
+        <div class="fgroup"><label>Estado de la cuota</label><div class="seg" id="cuotas-estado"></div></div>
         <button class="reset" id="cuotas-clear-range">Limpiar rango</button>
         <span class="hint" style="align-self:center">tocá el Nº de préstamo para tildar/destildar todas sus cuotas · tildá el ☑ del encabezado para tildar todo lo visible</span>
       </div>
@@ -529,8 +525,28 @@ function creditKey(r){return r.banco+'|'+r.prestamo;}
 function cuotaKey(r){return r.banco+'|'+r.prestamo+'|'+r.ncuota+'|'+r.fecha;}
 const selected = new Set();          // cuotas tildadas (persiste aunque cambien los filtros)
 let DATA_BY_KEY = {};                 // índice cuotaKey -> fila, para sumar selección sin importar el filtro activo
-function rebuildIndex(){ DATA_BY_KEY={}; DATA.forEach(r=>DATA_BY_KEY[cuotaKey(r)]=r); }
+let CRED_ALL = {};                    // índice creditKey -> TODAS las cuotas del crédito (sin importar los filtros)
+function rebuildIndex(){
+  DATA_BY_KEY={}; CRED_ALL={};
+  DATA.forEach(r=>{ DATA_BY_KEY[cuotaKey(r)]=r; (CRED_ALL[creditKey(r)]=CRED_ALL[creditKey(r)]||[]).push(r); });
+  Object.values(CRED_ALL).forEach(a=>a.sort((x,y)=>(x.ncuota||0)-(y.ncuota||0)));
+}
+// Estado del CRÉDITO: se calcula mirando todas sus cuotas (en la planilla el estado es por cuota).
+//  · ninguna pendiente  -> el estado que trae la planilla (CANCELADO / CANCELACION ANTICIPADA / FINALIZADO)
+//  · todas pendientes   -> VIGENTE
+//  · mezcla             -> PARCIALMENTE CANCELADO
+function creditEstado(all){
+  const nT=all.length, nP=all.filter(isPending).length;
+  if(!nT) return '';
+  if(nP===0){
+    const last=[...all].sort((a,b)=>String(a.fecha||'')<String(b.fecha||'')?-1:1).pop();
+    return (last&&last.estado)||'CANCELADO';
+  }
+  return nP===nT ? 'VIGENTE' : 'PARCIALMENTE CANCELADO';
+}
+function stClass(st){ return /PARCIAL/i.test(st)?'par':/VIGENTE/i.test(st)?'vig':/FINAL/i.test(st)?'fin':'can'; }
 const cuotasRange = {desde:'', hasta:''};
+let cuotasEstado = '';   // filtro propio de la tabla de cuotas ('' = todos)
 
 function filtered(){
   return DATA.filter(r=>{
@@ -643,22 +659,6 @@ function renderTipo(rows){
 }
 function shorten(s){return s.length>26?s.slice(0,25)+'…':s;}
 
-// ---- devaluation scatter (cuota_usd over time) ----
-function renderDeval(rows){
-  const pts=rows.filter(r=>r.fecha && r.cuota_usd && r.cuota_usd<200000)
-    .map(r=>({x:r.fecha, y:r.cuota_usd, b:r.banco, d:r.destino, n:r.ncuota}));
-  const groups={};
-  pts.forEach(p=>{const b=p.b||'(s/d)'; (groups[b]=groups[b]||[]).push({x:new Date(p.x).getTime(),y:p.y,meta:p});});
-  if(charts.deval)charts.deval.destroy();
-  charts.deval=new Chart(document.getElementById('devalChart'),{type:'scatter',
-    data:{datasets:Object.keys(groups).map(b=>({label:b,data:groups[b],backgroundColor:bankColor(b),pointRadius:3,pointHoverRadius:6}))},
-    options:{responsive:true,maintainAspectRatio:false,
-      scales:{x:{type:'linear',ticks:{callback:v=>{const d=new Date(v);return MONTHS[d.getMonth()]+" '"+String(d.getFullYear()).slice(2);},font:{family:'IBM Plex Mono',size:10},maxTicksLimit:9},grid:{color:'#eef1ec'}},
-        y:{ticks:{callback:v=>'u$s '+nf.format(v),font:{family:'IBM Plex Mono',size:10}},grid:{color:'#eef1ec'}}},
-      plugins:{legend:{labels:{font:{family:'Inter',size:12},boxWidth:12}},
-        tooltip:{callbacks:{title:()=>'',label:c=>{const m=c.raw.meta;return [m.destino+' · cuota '+m.n, 'U$S '+nf.format(m.y)+' · '+MONTHS[new Date(m.x).getMonth()]+' '+new Date(m.x).getFullYear()];}}}}}});
-}
-
 // ---- año bars ----
 function renderAnio(rows){
   const pend=rows.filter(isPending);const m={};
@@ -715,7 +715,8 @@ function renderDet(rows){
   let creds=Object.values(map).map(o=>{
     const rs=o.rows; const f=rs[0];
     const pend=rs.filter(isPending);
-    return {f, n:rs.length, pendN:pend.length,
+    const allC=CRED_ALL[creditKey(f)]||rs;      // todas las cuotas del crédito, sin importar los filtros
+    return {f, n:rs.length, pendN:pend.length, nAll:allC.length, pendAll:allC.filter(isPending).length, est:creditEstado(allC),
       tnaPct:(f.tna!=null)?f.tna:null,
       teaPct:(f.tea!=null)?f.tea:null,
       totalP:rs.reduce((a,r)=>a+(r.cuota_pesos||0),0),
@@ -729,10 +730,10 @@ function renderDet(rows){
       case 'banco':va=a.f.banco;vb=b.f.banco;break;
       case 'prestamo':va=a.f.prestamo;vb=b.f.prestamo;break;
       case 'moneda':va=a.f.moneda;vb=b.f.moneda;break;
-      case 'estado':va=a.f.estado;vb=b.f.estado;break;
+      case 'estado':va=a.est;vb=b.est;break;
       case 'tna':va=a.tnaPct;vb=b.tnaPct;break;
       case 'tea':va=a.teaPct;vb=b.teaPct;break;
-      case 'cuotas':va=a.pendN;vb=b.pendN;break;
+      case 'cuotas':va=a.pendAll;vb=b.pendAll;break;
       default:va=a.pendP;vb=b.pendP;
     }
     return cmp(va,vb)*detSort.dir;
@@ -740,31 +741,32 @@ function renderDet(rows){
   const H=[['Destino','destino',''],['Banco','banco',''],['Nº préstamo','prestamo',''],['Moneda','moneda',''],['Estado','estado',''],['TNA','tna','num'],['TEA','tea','num'],['Cuotas','cuotas','num'],['Pendiente','pendP','num']];
   let h='<table><thead><tr>'+H.map(c=>headerCell(c[0],c[1],detSort.key,detSort.dir,c[2])).join('')+'</tr></thead><tbody>';
   creds.forEach((c,i)=>{
-    const st=c.f.estado||''; const stc=/VIGENTE/i.test(st)?'vig':/FINAL/i.test(st)?'fin':'can';
+    const st=c.est||''; const stc=stClass(st);
     const tna=c.tnaPct!=null? nf1.format(c.tnaPct)+'%':'—';
     const tea=c.teaPct!=null? nf1.format(c.teaPct)+'%':'—';
     const monLbl=c.f.moneda==='usd'?'U$S':'$ ARS';
     const f=c.f;
     // Dólares acreditados: viene sólo en la 1ª cuota (col ACRED USD).
     // Si la fila 1 no lo trae, se toma el primer valor no vacío del crédito.
-    const usdAcred = (c.rows.find(r=>r.ncuota===1&&r.acred_usd!=null)
-                   || c.rows.find(r=>r.acred_usd!=null) || {}).acred_usd;
-    const usdDevolver = c.rows.some(r=>r.cuota_usd!=null)
-                      ? c.rows.reduce((a,r)=>a+(r.cuota_usd||0),0) : null;   // suma col CUOTA EN U$S
-    const usdSinDev   = c.rows.some(r=>r.sin_dev!=null)
-                      ? c.rows.reduce((a,r)=>a+(r.sin_dev||0),0) : null;     // suma col SIN DEV
-    const totCap = c.rows.reduce((a,r)=>a+(r.capital||0),0);
-    const totInt = c.rows.reduce((a,r)=>a+(r.interes||0),0);
-    const totCar = c.rows.reduce((a,r)=>a+(r.cargos||0),0);
-    const totImp = c.rows.reduce((a,r)=>a+(r.impuestos||0),0);
-    h+=`<tr class="creditrow" data-i="${i}" data-empresa="${f.empresa}" data-banco="${f.banco}" data-producto="${f.destino}" data-estado="${f.estado}" data-ncuota="${f.ncuota}" data-fecha="${f.fecha}" data-fecha-acr="${f.fecha_acr||''}" data-prestamo="${f.prestamo}" data-moneda="${f.moneda}" data-capital="${totCap}" data-interes="${totInt}" data-cargos="${totCar}" data-impuestos="${totImp}" data-pend="${c.pendP}" data-cuotas="${c.pendN}/${c.n}" data-tna="${c.tnaPct==null?'':c.tnaPct}" data-tea="${c.teaPct==null?'':c.teaPct}" data-usd-acred="${usdAcred==null?'':usdAcred}" data-usd-cuota="${usdDevolver==null?'':usdDevolver}" data-usd-sin-dev="${usdSinDev==null?'':usdSinDev}"><td><span class="chev">▸</span> ${c.f.destino||'(s/d)'}</td>
+    const all = CRED_ALL[creditKey(c.f)] || c.rows;   // crédito ENTERO, aunque haya filtros activos
+    const usdAcred = (all.find(r=>r.ncuota===1&&r.acred_usd!=null)
+                   || all.find(r=>r.acred_usd!=null) || {}).acred_usd;
+    const usdDevolver = all.some(r=>r.cuota_usd!=null)
+                      ? all.reduce((a,r)=>a+(r.cuota_usd||0),0) : null;   // suma col CUOTA EN U$S
+    const usdSinDev   = all.some(r=>r.sin_dev!=null)
+                      ? all.reduce((a,r)=>a+(r.sin_dev||0),0) : null;     // suma col SIN DEV
+    const totCap = all.reduce((a,r)=>a+(r.capital||0),0);
+    const totInt = all.reduce((a,r)=>a+(r.interes||0),0);
+    const totCar = all.reduce((a,r)=>a+(r.cargos||0),0);
+    const totImp = all.reduce((a,r)=>a+(r.impuestos||0),0);
+    h+=`<tr class="creditrow" data-i="${i}" data-empresa="${f.empresa}" data-banco="${f.banco}" data-producto="${f.destino}" data-estado="${c.est}" data-ncuota="${f.ncuota}" data-fecha="${f.fecha}" data-fecha-acr="${f.fecha_acr||''}" data-prestamo="${f.prestamo}" data-moneda="${f.moneda}" data-capital="${totCap}" data-interes="${totInt}" data-cargos="${totCar}" data-impuestos="${totImp}" data-pend="${c.pendP}" data-cuotas="${c.pendAll}/${c.nAll}" data-tna="${c.tnaPct==null?'':c.tnaPct}" data-tea="${c.teaPct==null?'':c.teaPct}" data-usd-acred="${usdAcred==null?'':usdAcred}" data-usd-cuota="${usdDevolver==null?'':usdDevolver}" data-usd-sin-dev="${usdSinDev==null?'':usdSinDev}"><td><span class="chev">▸</span> ${c.f.destino||'(s/d)'}</td>
       <td><span class="pill b-${c.f.banco}">${c.f.banco}</span></td>
       <td class="mono">${c.f.prestamo}</td>
       <td><span class="pill mon-${c.f.moneda}">${monLbl}</span></td>
       <td><span class="st ${stc}">${st}</span></td>
       <td class="num">${tna}</td>
       <td class="num">${tea}</td>
-      <td class="num">${c.pendN}/${c.n}</td>
+      <td class="num">${c.pendAll}/${c.nAll}</td>
       <td class="num">${'$ '+nf.format(Math.round(c.pendP))}</td></tr>`;
     h+=`<tr class="sub-tr" data-sub="${i}"><td colspan="9"><table class="mini"><thead><tr><th>Cuota</th><th>Fecha</th><th class="num">Capital</th><th class="num">Interés</th><th class="num">Cuota $</th><th class="num">TC</th><th class="num">Cuota U$S</th></tr></thead><tbody>`;
     c.rows.forEach(r=>{const pend=isPending(r);
@@ -798,9 +800,20 @@ function renderDet(rows){
 
 // ---- cuotas: capital e interés por vencimiento (plano, sin agrupar, con tilde para sumar) ----
 let lastCuotasBase=[];   // últimas filas recibidas (respetan filtros globales), antes del rango de fechas propio
+function renderCuotasEstado(){
+  const box=document.getElementById('cuotas-estado'); if(!box) return;
+  const label=e=>({'VIGENTE':'Vigente','CANCELADO':'Cancelado','CANCELACION ANTICIPADA':'Cancelación anticipada','FINALIZADO':'Finalizado'}[e]||(e.charAt(0)+e.slice(1).toLowerCase()));
+  const present=[...new Set(DATA.map(r=>(r.estado||'').trim().toUpperCase()).filter(Boolean))];
+  const order=['VIGENTE','CANCELADO'];
+  present.sort((a,b)=>{const ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?9:ia)-(ib<0?9:ib) || a.localeCompare(b);});
+  box.innerHTML=['',...present].map(e=>`<button data-e="${e}" class="${e===cuotasEstado?'on':''}">${e?label(e):'Todos'}</button>`).join('');
+  box.querySelectorAll('button').forEach(b=>b.onclick=()=>{ cuotasEstado=b.dataset.e; renderCuotas(lastCuotasBase); });
+}
 function renderCuotas(rows){
   lastCuotasBase = rows;
+  renderCuotasEstado();
   const list = rows.filter(r=>{
+    if(cuotasEstado && (r.estado||'').trim().toUpperCase()!==cuotasEstado) return false;
     if(cuotasRange.desde && (!r.fecha || r.fecha < cuotasRange.desde)) return false;
     if(cuotasRange.hasta && (!r.fecha || r.fecha > cuotasRange.hasta)) return false;
     return true;
@@ -1015,7 +1028,7 @@ function render(){
     return;
   }
   safe(renderCal,'calendario'); safe(renderBanco,'banco'); safe(renderTipo,'tipo');
-  safe(renderDeval,'devaluación'); safe(renderAnio,'año');
+  safe(renderAnio,'año');
   // Si algún gráfico falló, lo mostramos en pantalla (sin necesidad de abrir la consola).
   if(firstErr){
     const m=document.getElementById('datamsg');
@@ -1060,6 +1073,7 @@ document.getElementById('reset').onclick=()=>{
   Object.assign(state,{banco:'',credito:'',prestamo:'',estado:'',anio:'',q:'',moneda:'ars',monedaCred:'',tipo:''});
   ['f-banco','f-credito','f-prestamo','f-estado','f-anio'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-q').value='';
+  cuotasEstado='';
   document.querySelectorAll('#f-moneda button').forEach((x,i)=>x.classList.toggle('on',i===0));
   document.querySelectorAll('#f-monedacred button').forEach((x,i)=>x.classList.toggle('on',i===0));
   render();};
@@ -1121,45 +1135,67 @@ const nfU = new Intl.NumberFormat('es-AR',{minimumFractionDigits:2,maximumFracti
 function fila(k,v){return `<div class="modal-row"><span class="k">${k}</span><span class="v">${v}</span></div>`;}
 function abrirResumen(d){
   const num = x => { const n=parseFloat(x); return isNaN(n)?0:n; };
-  document.getElementById('mTitle').textContent = d.producto || '(sin destino)';
-  document.getElementById('mSub').innerHTML =
-    `${d.banco} · Nº ${d.prestamo} · ${d.estado||'—'} · ${d.moneda==='usd'?'crédito en U$S':'crédito en $'}`;
+  // Siempre se muestra el crédito ENTERO (todas sus cuotas), sin importar los filtros activos.
+  const all = CRED_ALL[d.banco+'|'+d.prestamo] || [];
+  const f0 = all[0] || {};
+  const estado = all.length ? creditEstado(all) : (d.estado||'');
+  const esUsd = (f0.moneda||d.moneda)==='usd';
+  const sum = (arr,k)=>arr.reduce((a,r)=>a+(r[k]||0),0);
+  const comp = r => (r.capital||0)+(r.interes||0)+(r.cargos||0)+(r.impuestos||0);
+  const pag = all.filter(r=>!isPending(r));
+  const pen = all.filter(isPending);
+  const capital=sum(all,'capital'), interes=sum(all,'interes');
+  const carImp = sum(all,'cargos')+sum(all,'impuestos');
+  const pagado = pag.reduce((a,r)=>a+comp(r),0);
+  const pendiente = pen.reduce((a,r)=>a+comp(r),0);
+  const pendPesos = sum(pen,'cuota_pesos');
 
-  const esUsd = d.moneda==='usd';
+  document.getElementById('mTitle').textContent = d.producto || f0.destino || '(sin destino)';
+  document.getElementById('mSub').innerHTML =
+    `${d.banco} · Nº ${d.prestamo} · ${estado||'—'} · ${esUsd?'crédito en U$S':'crédito en $'}`;
+
   const sim = esUsd ? 'U$S ' : '$ ';
   const fnum = x => sim + (esUsd ? nfU.format(num(x)) : nf.format(Math.round(num(x))));
   document.getElementById('mSecArs').textContent =
     esUsd ? '💵 Importes del crédito (en dólares)' : '💰 Importes del crédito (en pesos)';
-  const tna = d.tna!==''&&d.tna!=null ? nf1.format(num(d.tna))+'%' : '—';
-  const tea = d.tea!==''&&d.tea!=null ? nf1.format(num(d.tea))+'%' : '—';
-  const carImp = num(d.cargos)+num(d.impuestos);
+  const tnaV = f0.tna!=null ? f0.tna : null, teaV = f0.tea!=null ? f0.tea : null;
+  const tna = tnaV!=null ? nf1.format(tnaV)+'%' : '—';
+  const tea = teaV!=null ? nf1.format(teaV)+'%' : '—';
+  const soft = t => '<span style="opacity:.7">'+t+'</span>';
   document.getElementById('mArs').innerHTML =
-      fila('Capital', fnum(d.capital))
-    + fila('Interés', fnum(d.interes))
+      fila('Capital', fnum(capital))
+    + fila('Interés', fnum(interes))
     + (Math.abs(carImp)>=0.005 ? fila('Cargos e impuestos', fnum(carImp)) : '')
-    + fila('Total a pagar', fnum(num(d.capital)+num(d.interes)+carImp))
-    + fila('Saldo pendiente <span style="opacity:.7">(en $)</span>','$ '+nf.format(Math.round(num(d.pend))))
-    + fila('Cuotas pendientes', d.cuotas||'—')
-    + fila('Fecha de acreditación', d.fechaAcr ? fmtDate(d.fechaAcr) : '—')
+    + fila('Total a pagar', fnum(capital+interes+carImp))
+    + fila('Pagado / cancelado '+soft('('+pag.length+' cuota'+(pag.length===1?'':'s')+')'), fnum(pagado))
+    + fila('Pendiente '+soft('('+pen.length+' cuota'+(pen.length===1?'':'s')+')'), fnum(pendiente))
+    + (esUsd ? fila('Saldo pendiente '+soft('(en $)'), '$ '+nf.format(Math.round(pendPesos))) : '')
+    + fila('Cuotas pendientes', pen.length+'/'+all.length)
+    + fila('Fecha de acreditación', f0.fecha_acr ? fmtDate(f0.fecha_acr) : '—')
     + fila('TNA / TEA', tna+' / '+tea);
 
-  const hay = x => x!=='' && x!=null && !isNaN(parseFloat(x));
+  // Dólares: todo sobre el crédito completo
+  const acred = (all.find(r=>r.ncuota===1&&r.acred_usd!=null) || all.find(r=>r.acred_usd!=null) || {}).acred_usd;
+  const devol = all.some(r=>r.cuota_usd!=null) ? sum(all,'cuota_usd') : null;     // suma col CUOTA EN U$S
+  const sinDev = all.some(r=>r.sin_dev!=null) ? sum(all,'sin_dev') : null;        // suma col SIN DEV
+  const hay = x => x!=null && x!=='' && !isNaN(parseFloat(x));
   const usd = x => hay(x) ? 'U$S '+nfU.format(parseFloat(x)) : '—';
-  const acred=d.usdAcred, devol=d.usdCuota, sinDev=d.usdSinDev;
   let usdHtml = fila('Dólares acreditados', usd(acred))
               + fila('Dólares a devolver',  usd(devol))
               + fila('Sin devaluación',     usd(sinDev));
-  if(hay(acred) && hay(devol)){
-    const a=parseFloat(acred), v=parseFloat(devol), dif=v-a;
-    usdHtml += fila('Diferencia', (dif>=0?'+':'−')+' U$S '+nfU.format(Math.abs(dif))
-                    +' ('+nf1.format(v/a*100)+'%)');
+  if(hay(acred) && hay(devol) && parseFloat(acred)>0){
+    const a=parseFloat(acred), v=parseFloat(devol), dif=v-a, pct=dif/a*100;
+    const sg = dif>=0 ? '+' : '−';
+    usdHtml += fila('Diferencia', sg+' U$S '+nfU.format(Math.abs(dif))+' ('+sg+nf1.format(Math.abs(pct))+'%)');
   }
   document.getElementById('mUsd').innerHTML = usdHtml;
 
   const faltan = !hay(acred) || !hay(sinDev);
   document.getElementById('mNote').innerHTML =
-    'Capital e interés son la suma de todas las cuotas, en la moneda del crédito. «Dólares acreditados» es lo que entró al tomarlo; '
+    'Se muestra siempre el crédito completo (todas sus cuotas), sin importar los filtros activos. '
+    + 'Capital e interés son la suma de todas las cuotas, en la moneda del crédito. «Dólares acreditados» es lo que entró al tomarlo; '
     + '«a devolver» es la suma de las cuotas convertidas al tipo de cambio de cada vencimiento. '
+    + '«Diferencia» = a devolver ÷ acreditados − 1. '
     + 'Tocá el ▸ de la fila para ver el cuadro de cuotas.'
     + (faltan && usandoRespaldo
         ? '<br><br><b>Los datos marcados «—» no están en la copia de respaldo.</b> Abrí el tablero desde el link de GitHub Pages (no como archivo local) para que lea la planilla en vivo y los muestre.'
