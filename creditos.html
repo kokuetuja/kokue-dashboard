@@ -393,7 +393,7 @@ body { padding-top: 2px; }
         <div class="fgroup"><label>Vencimiento hasta</label><input type="date" id="cuotas-hasta"></div>
         <div class="fgroup"><label>Estado de la cuota</label><div class="seg" id="cuotas-estado"></div></div>
         <button class="reset" id="cuotas-clear-range">Limpiar rango</button>
-        <span class="hint" style="align-self:center">tocá el Nº de préstamo para tildar/destildar todas sus cuotas · tildá el ☑ del encabezado para tildar todo lo visible</span>
+        <span class="hint" style="align-self:center">tocá el Nº de préstamo para tildar/destildar sus cuotas visibles · tildá el ☑ del encabezado para tildar todo lo visible</span>
       </div>
       <div class="sel-summary" id="selSummary"></div>
       <div class="scroll" id="cuotasWrap"></div>
@@ -842,9 +842,9 @@ function renderCuotas(rows){
     const s0=r.moneda==='usd'?'U$S':'$';
     const k=cuotaKey(r);
     h+=`<tr><td class="chk"><input type="checkbox" class="chk-cuota" data-k="${k}" ${selected.has(k)?'checked':''}></td>
-      <td class="credito-cell" data-b="${r.banco}" data-p="${r.prestamo}" title="Tildar/destildar todas las cuotas de este crédito">${r.destino||'(s/d)'}</td>
+      <td class="credito-cell" data-b="${r.banco}" data-p="${r.prestamo}" title="Tildar/destildar las cuotas visibles de este crédito">${r.destino||'(s/d)'}</td>
       <td><span class="pill b-${r.banco}">${r.banco}</span></td>
-      <td class="mono prestamo-cell" data-b="${r.banco}" data-p="${r.prestamo}" title="Tildar/destildar todas las cuotas de este crédito">${r.prestamo}</td>
+      <td class="mono prestamo-cell" data-b="${r.banco}" data-p="${r.prestamo}" title="Tildar/destildar las cuotas visibles de este crédito">${r.prestamo}</td>
       <td class="mono">${r.fecha?fmtDate(r.fecha):''}</td>
       <td class="num">${r.capital!=null?s0+' '+nf.format(Math.round(r.capital)):'—'}</td>
       <td class="num">${r.interes!=null?s0+' '+nf.format(Math.round(r.interes)):'—'}</td>
@@ -865,7 +865,8 @@ function renderCuotas(rows){
   });
   wrap.querySelectorAll('.credito-cell,.prestamo-cell').forEach(td=>td.onclick=()=>{
     const b=td.dataset.b,p=td.dataset.p;
-    const rowsCred=DATA.filter(d=>d.banco===b && d.prestamo===p);
+    // solo las cuotas VISIBLES (respeta el selector de estado, el rango de fechas y los filtros globales)
+    const rowsCred=list.filter(d=>d.banco===b && d.prestamo===p);
     const allSel=rowsCred.every(r=>selected.has(cuotaKey(r)));
     rowsCred.forEach(r=>{const k=cuotaKey(r); if(allSel) selected.delete(k); else selected.add(k);});
     renderCuotas(lastCuotasBase);
